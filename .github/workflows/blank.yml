@@ -28,7 +28,7 @@ jobs:
           gradle wrapper --gradle-version 8.2
           chmod +x gradlew
 
-      - name: Generate Apple VibeTV v3.6 Source Code
+      - name: Generate Apple VibeTV v3.7 Source Code
         run: |
           mkdir -p app/src/main/java/com/appletv/launcher
           mkdir -p app/src/main/res/layout
@@ -84,8 +84,8 @@ jobs:
                   applicationId "com.appletv.launcher"
                   minSdk 26
                   targetSdk 34
-                  versionCode 9
-                  versionName "3.6.0"
+                  versionCode 10
+                  versionName "3.7.0"
               }
 
               buildTypes {
@@ -203,7 +203,7 @@ jobs:
           </vector>
           EOF
 
-          # layout/activity_main.xml (Широкие отступы, больше свободного пространства в центре для обоев)
+          # layout/activity_main.xml
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -701,7 +701,7 @@ jobs:
           }
           EOF
 
-          # MainActivity.kt (Исправлен Toast и очищены все зависимости)
+          # MainActivity.kt (Чистый исправленный код)
           cat << 'EOF' > app/src/main/java/com/appletv/launcher/MainActivity.kt
           package com.appletv.launcher
 
@@ -903,7 +903,7 @@ jobs:
               }
 
               private fun refreshLauncherGrid() {
-                  val prefs = getSharedPreferences("tvos_v36_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v37_prefs", Context.MODE_PRIVATE)
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
                   val dockSet = prefs.getStringSet("dock_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
@@ -1034,7 +1034,7 @@ jobs:
               }
 
               private fun showAppOptionsDialog(app: AppEntry) {
-                  val prefs = getSharedPreferences("tvos_v36_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v37_prefs", Context.MODE_PRIVATE)
                   val dockSet = prefs.getStringSet("dock_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
@@ -1069,7 +1069,7 @@ jobs:
               }
 
               private fun showRestoreHiddenDialog() {
-                  val prefs = getSharedPreferences("tvos_v36_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v37_prefs", Context.MODE_PRIVATE)
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
                   if (hiddenSet.isEmpty()) {
@@ -1142,5 +1142,5 @@ jobs:
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppleTV-Vibe-Launcher-v3.6
+          name: AppleTV-Vibe-Launcher-v3.7
           path: app/build/outputs/apk/debug/app-debug.apk
