@@ -69,8 +69,8 @@ jobs:
                   applicationId "com.appletv.launcher"
                   minSdk 26
                   targetSdk 34
-                  versionCode 13
-                  versionName "4.1.0"
+                  versionCode 14
+                  versionName "4.2.0"
               }
               buildTypes {
                   release { minifyEnabled false }
@@ -313,7 +313,8 @@ jobs:
           }
           EOF
 
-          gradle wrapper --gradle-version 8.2
+          # Явно привязываем Gradle версии 8.2 вместо последней сырой
+          gradle wrapper --gradle-version 8.2 --distribution-type bin
           chmod +x gradlew
 
       - name: Compile Debug APK
@@ -322,5 +323,5 @@ jobs:
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppleTV-Vibe-Launcher-v4.1
+          name: AppleTV-Vibe-Launcher-v4.2
           path: app/build/outputs/apk/debug/app-debug.apk
