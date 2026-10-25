@@ -19,6 +19,13 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      # 1. Сначала генерируем wrapper 8.2 в пустой директории, чтобы избежать конфликта версий
+      - name: Initialize Gradle 8.2 Wrapper
+        run: |
+          gradle wrapper --gradle-version 8.2
+          chmod +x gradlew
+
+      # 2. Теперь создаем структуру и файлы проекта
       - name: Generate tvOS Launcher Source Code
         run: |
           mkdir -p app/src/main/java/com/appletv/launcher
@@ -26,7 +33,7 @@ jobs:
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
 
-          # 1. settings.gradle
+          # settings.gradle
           cat << 'EOF' > settings.gradle
           pluginManagement {
               repositories {
@@ -46,7 +53,7 @@ jobs:
           include ':app'
           EOF
 
-          # 2. Root build.gradle
+          # Root build.gradle
           cat << 'EOF' > build.gradle
           plugins {
               id 'com.android.application' version '8.1.0' apply false
@@ -54,7 +61,7 @@ jobs:
           }
           EOF
 
-          # 3. app/build.gradle
+          # app/build.gradle
           cat << 'EOF' > app/build.gradle
           plugins {
               id 'com.android.application'
@@ -98,7 +105,7 @@ jobs:
           }
           EOF
 
-          # 4. AndroidManifest.xml
+          # AndroidManifest.xml
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -131,7 +138,7 @@ jobs:
           </manifest>
           EOF
 
-          # 5. Стили и палитра Apple tvOS
+          # values/colors.xml
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -145,6 +152,7 @@ jobs:
           </resources>
           EOF
 
+          # values/themes.xml
           cat << 'EOF' > app/src/main/res/values/themes.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -158,7 +166,7 @@ jobs:
           </resources>
           EOF
 
-          # 6. Графические ресурсы и селекторы
+          # drawables
           cat << 'EOF' > app/src/main/res/drawable/bg_tvos_gradient.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
@@ -203,7 +211,7 @@ jobs:
           </vector>
           EOF
 
-          # 7. Разметка главного экрана (activity_main.xml)
+          # layout/activity_main.xml
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -216,7 +224,6 @@ jobs:
               android:paddingTop="28dp"
               android:paddingBottom="24dp">
 
-              <!-- tvOS Верхняя панель: статус и часы -->
               <LinearLayout
                   android:id="@+id/headerBar"
                   android:layout_width="0dp"
@@ -252,7 +259,6 @@ jobs:
                       android:textStyle="bold" />
               </LinearLayout>
 
-              <!-- tvOS Top Shelf (Виджеты быстрого действия) -->
               <HorizontalScrollView
                   android:id="@+id/topShelfScroll"
                   android:layout_width="0dp"
@@ -271,7 +277,6 @@ jobs:
                       android:orientation="horizontal"
                       android:gravity="center_vertical">
 
-                      <!-- Кнопка 1: VPN Центр -->
                       <LinearLayout
                           android:id="@+id/cardVpn"
                           android:layout_width="220dp"
@@ -300,7 +305,6 @@ jobs:
                               android:textSize="12sp" />
                       </LinearLayout>
 
-                      <!-- Кнопка 2: ИИ-Ассистент -->
                       <LinearLayout
                           android:id="@+id/cardAi"
                           android:layout_width="220dp"
@@ -329,7 +333,6 @@ jobs:
                               android:textSize="12sp" />
                       </LinearLayout>
 
-                      <!-- Кнопка 3: Параметры системы -->
                       <LinearLayout
                           android:id="@+id/cardSettings"
                           android:layout_width="220dp"
@@ -359,7 +362,6 @@ jobs:
                   </LinearLayout>
               </HorizontalScrollView>
 
-              <!-- Сетка приложений tvOS -->
               <androidx.recyclerview.widget.RecyclerView
                   android:id="@+id/appsGrid"
                   android:layout_width="0dp"
@@ -374,7 +376,7 @@ jobs:
           </androidx.constraintlayout.widget.ConstraintLayout>
           EOF
 
-          # 8. Разметка элемента приложения (item_app_tile.xml)
+          # layout/item_app_tile.xml
           cat << 'EOF' > app/src/main/res/layout/item_app_tile.xml
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -417,12 +419,11 @@ jobs:
                   android:gravity="center"
                   android:maxLines="1"
                   android:textColor="@color/tvos_text_primary"
-                  android:textSize="13sp"
-                  android:textStyle="normal" />
+                  android:textSize="13sp" />
           </LinearLayout>
           EOF
 
-          # 9. AppAdapter.kt (С фокус-анимацией Apple TV)
+          # AppAdapter.kt
           cat << 'EOF' > app/src/main/java/com/appletv/launcher/AppAdapter.kt
           package com.appletv.launcher
 
@@ -460,7 +461,6 @@ jobs:
                   holder.title.text = app.label
                   holder.icon.setImageDrawable(app.icon)
 
-                  // Эффект парящей иконки Apple TV при наведении пульта
                   holder.card.setOnFocusChangeListener { v, hasFocus ->
                       val scale = if (hasFocus) 1.15f else 1.0f
                       val elevation = if (hasFocus) 16f else 0f
@@ -482,7 +482,7 @@ jobs:
           }
           EOF
 
-          # 10. MainActivity.kt (Логика опроса пакетов, пульта и запуска)
+          # MainActivity.kt
           cat << 'EOF' > app/src/main/java/com/appletv/launcher/MainActivity.kt
           package com.appletv.launcher
 
@@ -542,7 +542,6 @@ jobs:
                       it.onFocusChangeListener = focusAnimator
                   }
 
-                  // Логика кнопки 1: VPN
                   cardVpn.setOnClickListener {
                       var launched = false
                       for (pkg in vpnKnownPackages) {
@@ -562,7 +561,6 @@ jobs:
                       }
                   }
 
-                  // Логика кнопки 2: AI Помощник
                   cardAi.setOnClickListener {
                       var launched = false
                       for (pkg in aiKnownPackages) {
@@ -583,7 +581,6 @@ jobs:
                       }
                   }
 
-                  // Настройки
                   cardSettings.setOnClickListener {
                       startActivity(Intent(Settings.ACTION_SETTINGS))
                   }
@@ -633,14 +630,11 @@ jobs:
           }
           EOF
 
-      - name: Initialize Gradle 8.2 Wrapper
-        run: |
-          gradle wrapper --gradle-version 8.2
-          chmod +x gradlew
-
+      # 3. Собираем проект через созданный Gradle Wrapper 8.2
       - name: Compile Debug APK
         run: ./gradlew assembleDebug --no-daemon
 
+      # 4. Загружаем результат в артефакты
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
