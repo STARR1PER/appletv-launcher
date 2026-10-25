@@ -28,7 +28,7 @@ jobs:
           gradle wrapper --gradle-version 8.2
           chmod +x gradlew
 
-      - name: Generate Apple VibeTV v3.3 Source Code
+      - name: Generate Apple VibeTV v3.5 Source Code
         run: |
           mkdir -p app/src/main/java/com/appletv/launcher
           mkdir -p app/src/main/res/layout
@@ -84,8 +84,8 @@ jobs:
                   applicationId "com.appletv.launcher"
                   minSdk 26
                   targetSdk 34
-                  versionCode 6
-                  versionName "3.3.0"
+                  versionCode 8
+                  versionName "3.5.0"
               }
 
               buildTypes {
@@ -148,12 +148,12 @@ jobs:
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <color name="tvos_bg_dark">#030406</color>
+              <color name="tvos_bg_dark">#020305</color>
               <color name="tvos_text_primary">#FFFFFF</color>
               <color name="tvos_text_secondary">#9DA4B0</color>
-              <color name="tvos_dock_glass">#1AFFFFFF</color>
-              <color name="tvos_dock_stroke">#38FFFFFF</color>
-              <color name="tvos_pill_bg">#22FFFFFF</color>
+              <color name="tvos_dock_glass">#18FFFFFF</color>
+              <color name="tvos_dock_stroke">#35FFFFFF</color>
+              <color name="tvos_pill_bg">#20FFFFFF</color>
           </resources>
           EOF
 
@@ -215,7 +215,6 @@ jobs:
               android:clipChildren="false"
               android:clipToPadding="false">
 
-              <!-- Кинематографический динамический фон с глубокой текстурой tvOS -->
               <View
                   android:id="@+id/ambientGlowView"
                   android:layout_width="match_parent"
@@ -225,9 +224,9 @@ jobs:
                   android:id="@+id/topHeader"
                   android:layout_width="0dp"
                   android:layout_height="wrap_content"
-                  android:layout_marginStart="54dp"
-                  android:layout_marginEnd="54dp"
-                  android:layout_marginTop="32dp"
+                  android:layout_marginStart="72dp"
+                  android:layout_marginEnd="72dp"
+                  android:layout_marginTop="42dp"
                   android:gravity="center_vertical"
                   android:orientation="horizontal"
                   android:clipChildren="false"
@@ -372,9 +371,9 @@ jobs:
                   android:id="@+id/focusedTitleBlock"
                   android:layout_width="0dp"
                   android:layout_height="wrap_content"
-                  android:layout_marginStart="56dp"
-                  android:layout_marginEnd="56dp"
-                  android:layout_marginTop="36dp"
+                  android:layout_marginStart="72dp"
+                  android:layout_marginEnd="72dp"
+                  android:layout_marginTop="32dp"
                   android:orientation="vertical"
                   app:layout_constraintTop_toBottomOf="@id/topHeader"
                   app:layout_constraintStart_toStartOf="parent"
@@ -399,7 +398,7 @@ jobs:
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:layout_marginTop="2dp"
-                      android:text="Apple TV Dock  •  ОК — открыть  •  Пульт: okko/иви перехвачены"
+                      android:text="Apple TV Dock  •  ОК — открыть  •  AirPlay задействует системные службы"
                       android:textColor="#A0FFFFFF"
                       android:textSize="12sp" />
               </LinearLayout>
@@ -408,9 +407,9 @@ jobs:
                   android:id="@+id/dockGlassBar"
                   android:layout_width="0dp"
                   android:layout_height="110dp"
-                  android:layout_marginStart="46dp"
-                  android:layout_marginEnd="46dp"
-                  android:layout_marginTop="12dp"
+                  android:layout_marginStart="62dp"
+                  android:layout_marginEnd="62dp"
+                  android:layout_marginTop="14dp"
                   android:background="@drawable/bg_dock_glass"
                   android:paddingStart="12dp"
                   android:paddingEnd="12dp"
@@ -434,10 +433,10 @@ jobs:
                   android:layout_width="0dp"
                   android:layout_height="0dp"
                   android:layout_marginTop="10dp"
-                  android:paddingStart="58dp"
-                  android:paddingEnd="58dp"
+                  android:paddingStart="72dp"
+                  android:paddingEnd="72dp"
                   android:paddingTop="6dp"
-                  android:paddingBottom="24dp"
+                  android:paddingBottom="28dp"
                   android:clipChildren="false"
                   android:clipToPadding="false"
                   app:layout_constraintTop_toBottomOf="@id/dockGlassBar"
@@ -454,7 +453,7 @@ jobs:
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
-              android:padding="7dp"
+              android:padding="8dp"
               android:clipChildren="false"
               android:clipToPadding="false">
 
@@ -702,7 +701,7 @@ jobs:
           }
           EOF
 
-          # MainActivity.kt (С перехватом кнопок пульта Okko/Иви и кинематографическим фоном)
+          # MainActivity.kt (Исправлен Toast и системный запуск)
           cat << 'EOF' > app/src/main/java/com/appletv/launcher/MainActivity.kt
           package com.appletv.launcher
 
@@ -732,7 +731,6 @@ jobs:
           class MainActivity : AppCompatActivity() {
 
               private val vpnKeywords = listOf("happ", "v2ray", "outline", "wireguard", "vpn", "nekobox", "singbox", "clash", "vless")
-              private val airPlayKeywords = listOf("airscreen", "mhshare", "acbridge", "airplay", "airpin", "miracast", "cast", "wfd")
               private val junkKeywords = listOf("parentcontrol", "webview", "certinstaller", "printspooler")
 
               private lateinit var allApps: MutableList<AppEntry>
@@ -754,15 +752,14 @@ jobs:
                   refreshLauncherGrid()
               }
 
-              // Перехват нажатий брендовых кнопок на пульте Сбера (Okko, Иви и др.)
               override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
                   when (keyCode) {
-                      183, 269, 10001 -> { // Сканкоды нижних кнопок пульта (например, Okko)
-                          launchPreferredMediaApp("youtube") // Перенаправляем на YouTube / SmartTube
+                      183, 269, 10001 -> {
+                          launchPreferredMediaApp("youtube")
                           return true
                       }
-                      184, 270, 10002 -> { // Кнопка Иви
-                          launchPreferredMediaApp("kinopoisk") // Перенаправляем на Кинопоиск
+                      184, 270, 10002 -> {
+                          launchPreferredMediaApp("kinopoisk")
                           return true
                       }
                   }
@@ -862,7 +859,7 @@ jobs:
                   }
 
                   btnAirPlay.setOnClickListener {
-                      showAirPlayCenterDialog()
+                      openSystemCastOrAirPlay()
                   }
 
                   btnHidden.setOnClickListener {
@@ -874,33 +871,21 @@ jobs:
                   }
               }
 
-              private fun showAirPlayCenterDialog() {
-                  val receivers = allApps.filter { app ->
-                      val key = "${app.label.lowercase()} ${app.packageName.lowercase()}"
-                      airPlayKeywords.any { kw -> key.contains(kw) }
-                  }
-
-                  val menuItems = mutableListOf<String>()
-                  val actions = mutableListOf<() -> Unit>()
-
-                  for (app in receivers) {
-                      menuItems.add("Запустить ${app.label}")
-                      actions.add { launchAppEntry(app) }
-                  }
-
-                  menuItems.add("Системные настройки трансляции (Cast)")
-                  actions.add {
+              private fun openSystemCastOrAirPlay() {
+                  wakeUpAirPlayServicesSilently()
+                  val castIntents = listOf(
+                      Intent("android.settings.CAST_SETTINGS"),
+                      Intent("com.android.tv.action.VIEW_INPUTS"),
+                      Intent(Settings.ACTION_CAST_SETTINGS),
+                      Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                  )
+                  for (intent in castIntents) {
                       try {
-                          startActivity(Intent(Settings.ACTION_CAST_SETTINGS))
-                      } catch (e: Exception) {
-                          startActivity(Intent(Settings.ACTION_SETTINGS))
-                      }
+                          startActivity(intent)
+                          return
+                      } catch (_: Exception) {}
                   }
-
-                  AlertDialog.Builder(this)
-                      .setTitle("📡 Центр AirPlay")
-                      .setItems(menuItems.toTypedArray()) { _, which -> actions[which].invoke() }
-                      .show()
+                  Toast.makeText(this, "Службы AirPlay активированы в фоне", Toast.LENGTH_SHORT).show()
               }
 
               private fun openTvInputSource() {
@@ -918,7 +903,7 @@ jobs:
               }
 
               private fun refreshLauncherGrid() {
-                  val prefs = getSharedPreferences("tvos_v33_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v35_prefs", Context.MODE_PRIVATE)
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
                   val dockSet = prefs.getStringSet("dock_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
@@ -939,7 +924,6 @@ jobs:
                           seen.add(pkg)
                           val label = info.loadLabel(pm).toString()
 
-                          // Автоскрытие системного мусора и WebView
                           if (!prefs.getBoolean("cleaned_$pkg", false)) {
                               if (junkKeywords.any { label.lowercase().contains(it) || pkg.lowercase().contains(it) }) {
                                   hiddenSet.add(pkg)
@@ -977,7 +961,7 @@ jobs:
                   val dockApps = mutableListOf<AppEntry>()
                   for (app in visibleApps) {
                       if (dockSet.contains(app.packageName) && dockApps.size < spanCount) {
-                          dockApps.add(app)
+                        dockApps.add(app)
                       }
                   }
                   for (app in visibleApps) {
@@ -1022,26 +1006,25 @@ jobs:
 
                   titleView.text = app.label
                   val zone = if (isInDock) "Apple TV Dock" else "Все приложения"
-                  hintView.text = "$zone  •  ОК — открыть  •  Удерживайте ОК — настроить"
+                  hintView.text = "$zone  •  ОК — открыть  •  AirPlay задействует системные службы"
 
-                  // Кинематографические многослойные обои с мягким рассеянным свечением
                   val targetColor = Color.argb(
-                      170,
+                      175,
                       Color.red(app.brandColor),
                       Color.green(app.brandColor),
                       Color.blue(app.brandColor)
                   )
 
                   val animator = ValueAnimator.ofObject(ArgbEvaluator(), currentAmbientColor, targetColor)
-                  animator.duration = 340
+                  animator.duration = 350
                   animator.addUpdateListener { va ->
                       val animatedColor = va.animatedValue as Int
                       val bg = GradientDrawable(
                           GradientDrawable.Orientation.TR_BL,
                           intArrayOf(
                               animatedColor,
-                              Color.parseColor("#090D16"),
-                              Color.parseColor("#030406")
+                              Color.parseColor("#080B14"),
+                              Color.parseColor("#020305")
                           )
                       )
                       ambientView.background = bg
@@ -1051,7 +1034,7 @@ jobs:
               }
 
               private fun showAppOptionsDialog(app: AppEntry) {
-                  val prefs = getSharedPreferences("tvos_v33_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v35_prefs", Context.MODE_PRIVATE)
                   val dockSet = prefs.getStringSet("dock_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
@@ -1086,7 +1069,7 @@ jobs:
               }
 
               private fun showRestoreHiddenDialog() {
-                  val prefs = getSharedPreferences("tvos_v33_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v35_prefs", Context.MODE_PRIVATE)
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
                   if (hiddenSet.isEmpty()) {
@@ -1159,5 +1142,5 @@ jobs:
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppleTV-Vibe-Launcher-v3.3
+          name: AppleTV-Vibe-Launcher-v3.5
           path: app/build/outputs/apk/debug/app-debug.apk
