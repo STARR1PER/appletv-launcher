@@ -1,4 +1,4 @@
-name: Build Apple tvOS Launcher v5.0 Ultimate
+name: Build Apple tvOS VibeTV Launcher v6.0
 
 on:
   push:
@@ -77,10 +77,10 @@ jobs:
               compileSdk 34
               defaultConfig {
                   applicationId "com.appletv.launcher"
-                  minSdk 26
-                  targetSdk 34
-                  versionCode 25
-                  versionName "5.0.0-Ultimate"
+                  minSdk 24
+                  targetSdk 33
+                  versionCode 30
+                  versionName "6.0.0-VibeTV"
               }
               buildTypes {
                   release { minifyEnabled false }
@@ -141,10 +141,10 @@ jobs:
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <color name="tvos_bg_dark">#05070C</color>
+              <color name="tvos_bg_dark">#060B19</color>
               <color name="tvos_text_primary">#FFFFFF</color>
-              <color name="tvos_dock_glass">#24FFFFFF</color>
-              <color name="tvos_dock_stroke">#40FFFFFF</color>
+              <color name="tvos_dock_glass">#22FFFFFF</color>
+              <color name="tvos_dock_stroke">#38FFFFFF</color>
               <color name="tvos_pill_bg">#28FFFFFF</color>
           </resources>
           EOF
@@ -163,7 +163,7 @@ jobs:
           cat << 'EOF' > app/src/main/res/drawable/bg_dock_glass.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="28dp" />
+              <corners android:radius="26dp" />
               <solid android:color="@color/tvos_dock_glass" />
               <stroke android:width="1dp" android:color="@color/tvos_dock_stroke" />
           </shape>
@@ -174,22 +174,14 @@ jobs:
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
               <corners android:radius="50dp" />
               <solid android:color="@color/tvos_pill_bg" />
-              <stroke android:width="1dp" android:color="#45FFFFFF" />
-          </shape>
-          EOF
-
-          cat << 'EOF' > app/src/main/res/drawable/bg_vpn_badge.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="10dp" />
-              <solid android:color="#30D158" />
+              <stroke android:width="1dp" android:color="#40FFFFFF" />
           </shape>
           EOF
 
           cat << 'EOF' > app/src/main/res/drawable/bg_card_rounded.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="18dp" />
+              <corners android:radius="16dp" />
               <solid android:color="#1C1C1E" />
           </shape>
           EOF
@@ -197,10 +189,19 @@ jobs:
           cat << 'EOF' > app/src/main/res/drawable/bg_focus_border.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="18dp" />
+              <corners android:radius="16dp" />
               <solid android:color="#00000000" />
-              <stroke android:width="3.5dp" android:color="#FFFFFF" />
+              <stroke android:width="3dp" android:color="#FFFFFF" />
           </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/ic_wifi.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="20dp" android:height="20dp"
+              android:viewportWidth="24" android:viewportHeight="24">
+              <path android:fillColor="#FFFFFF" android:pathData="M12,21L15.6,16.2C14.6,15.45 13.35,15 12,15C10.65,15 9.4,15.45 8.4,16.2L12,21ZM12,3C7.95,3 4.21,4.34 1.2,6.6L3,9C5.5,7.12 8.62,6 12,6C15.38,6 18.5,7.12 21,9L22.8,6.6C19.79,4.34 16.05,3 12,3ZM12,9C9.3,9 6.81,9.89 4.8,11.4L6.6,13.8C8.1,12.67 9.97,12 12,12C14.03,12 15.9,12.67 17.4,13.8L19.2,11.4C17.19,9.89 14.7,9 12,9Z"/>
+          </vector>
           EOF
 
           cat << 'EOF' > app/src/main/res/drawable/ic_tvos_logo.xml
@@ -223,40 +224,45 @@ jobs:
               android:clipToPadding="false"
               android:background="@color/tvos_bg_dark">
 
+              <!-- Видео-обои Apple Aerial (включаются по желанию в настройках) -->
               <VideoView
                   android:id="@+id/aerialVideoView"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent"
                   android:visibility="gone" />
 
+              <!-- Атмосферное свечение фона как на видео VibeTV -->
               <View
                   android:id="@+id/ambientGlowView"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent" />
 
+              <!-- ВЕРХНЯЯ ПАНЕЛЬ ТОЧЬ-В-ТОЧЬ КАК В ВИДЕО НА 00:47 -->
               <LinearLayout
                   android:id="@+id/topHeader"
                   android:layout_width="0dp"
                   android:layout_height="wrap_content"
-                  android:layout_marginStart="72dp"
-                  android:layout_marginEnd="72dp"
-                  android:layout_marginTop="42dp"
+                  android:layout_marginStart="64dp"
+                  android:layout_marginEnd="64dp"
+                  android:layout_marginTop="40dp"
                   android:gravity="center_vertical"
                   android:orientation="horizontal"
                   app:layout_constraintTop_toTopOf="parent"
                   app:layout_constraintStart_toStartOf="parent"
                   app:layout_constraintEnd_toEndOf="parent">
 
+                  <!-- Левый блок: ДОБРЫЙ ВЕЧЕР, крупные часы 19:15 и двустрочная дата справа от часов -->
                   <LinearLayout
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:orientation="vertical">
+
                       <TextView
                           android:id="@+id/tvGreeting"
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
-                          android:text=" TV  •  ДОМАШНИЙ ЭКРАН"
-                          android:textColor="#B0FFFFFF"
+                          android:text="ДОБРЫЙ ВЕЧЕР"
+                          android:textColor="#99FFFFFF"
                           android:textSize="11sp"
                           android:letterSpacing="0.08"
                           android:textStyle="bold" />
@@ -264,8 +270,9 @@ jobs:
                       <LinearLayout
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
-                          android:gravity="bottom"
+                          android:gravity="center_vertical"
                           android:orientation="horizontal">
+
                           <TextClock
                               android:id="@+id/tvClock"
                               android:layout_width="wrap_content"
@@ -273,18 +280,29 @@ jobs:
                               android:format24Hour="HH:mm"
                               android:format12Hour="HH:mm"
                               android:textColor="@color/tvos_text_primary"
-                              android:textSize="42sp"
+                              android:textSize="44sp"
                               android:fontFamily="sans-serif-light" />
+
+                          <TextView
+                              android:id="@+id/tvDateTwoLine"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:layout_marginStart="14dp"
+                              android:lineSpacingExtra="2dp"
+                              android:text="ЧЕТВЕРГ\n22 ОКТЯБРЯ"
+                              android:textColor="#B3FFFFFF"
+                              android:textSize="11sp"
+                              android:letterSpacing="0.04"
+                              android:textStyle="bold" />
 
                           <TextView
                               android:id="@+id/tvWeather"
                               android:layout_width="wrap_content"
                               android:layout_height="wrap_content"
-                              android:layout_marginStart="20dp"
-                              android:layout_marginBottom="6dp"
-                              android:text="⛅ Загрузка..."
-                              android:textColor="#E6FFFFFF"
-                              android:textSize="18sp"
+                              android:layout_marginStart="18dp"
+                              android:text="⛅ +18°C"
+                              android:textColor="#CCFFFFFF"
+                              android:textSize="14sp"
                               android:fontFamily="sans-serif-medium" />
                       </LinearLayout>
                   </LinearLayout>
@@ -294,6 +312,7 @@ jobs:
                       android:layout_height="1dp"
                       android:layout_weight="1" />
 
+                  <!-- Правый блок: только капсула Источники, кружок Wi-Fi и кружок Настройки (как на 00:52) -->
                   <LinearLayout
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
@@ -301,94 +320,67 @@ jobs:
                       android:orientation="horizontal">
 
                       <TextView
-                          android:id="@+id/btnAiAssistant"
+                          android:id="@+id/btnSources"
                           android:layout_width="wrap_content"
-                          android:layout_height="40dp"
-                          android:layout_marginEnd="12dp"
+                          android:layout_height="42dp"
+                          android:layout_marginEnd="10dp"
                           android:background="@drawable/bg_top_pill"
                           android:clickable="true"
                           android:focusable="true"
                           android:gravity="center"
                           android:paddingStart="18dp"
                           android:paddingEnd="18dp"
-                          android:text="✨ Siri / Gemini"
+                          android:text="📺  Источники"
                           android:textColor="#FFFFFF"
                           android:textSize="13sp"
                           android:textStyle="bold" />
 
-                      <TextView
-                          android:id="@+id/btnSources"
-                          android:layout_width="wrap_content"
-                          android:layout_height="40dp"
-                          android:layout_marginEnd="12dp"
+                      <FrameLayout
+                          android:id="@+id/btnWifiStatus"
+                          android:layout_width="42dp"
+                          android:layout_height="42dp"
+                          android:layout_marginEnd="10dp"
                           android:background="@drawable/bg_top_pill"
                           android:clickable="true"
-                          android:focusable="true"
-                          android:gravity="center"
-                          android:paddingStart="16dp"
-                          android:paddingEnd="16dp"
-                          android:text="📺 Входы"
-                          android:textColor="#FFFFFF"
-                          android:textSize="13sp"
-                          android:textStyle="bold" />
+                          android:focusable="true">
+
+                          <ImageView
+                              android:layout_width="20dp"
+                              android:layout_height="20dp"
+                              android:layout_gravity="center"
+                              android:src="@drawable/ic_wifi" />
+
+                          <View
+                              android:id="@+id/vpnActiveDot"
+                              android:layout_width="8dp"
+                              android:layout_height="8dp"
+                              android:layout_gravity="top|end"
+                              android:layout_margin="7dp"
+                              android:background="#30D158"
+                              android:visibility="gone" />
+                      </FrameLayout>
 
                       <TextView
                           android:id="@+id/btnSettings"
-                          android:layout_width="40dp"
-                          android:layout_height="40dp"
-                          android:layout_marginEnd="14dp"
+                          android:layout_width="42dp"
+                          android:layout_height="42dp"
                           android:background="@drawable/bg_top_pill"
                           android:clickable="true"
                           android:focusable="true"
                           android:gravity="center"
                           android:text="⚙"
                           android:textColor="#FFFFFF"
-                          android:textSize="17sp" />
-
-                      <LinearLayout
-                          android:id="@+id/appleStatusBar"
-                          android:layout_width="wrap_content"
-                          android:layout_height="40dp"
-                          android:background="@drawable/bg_top_pill"
-                          android:gravity="center_vertical"
-                          android:paddingStart="14dp"
-                          android:paddingEnd="14dp"
-                          android:orientation="horizontal">
-
-                          <TextView
-                              android:id="@+id/tvNetStatus"
-                              android:layout_width="wrap_content"
-                              android:layout_height="wrap_content"
-                              android:text="📶 Wi-Fi"
-                              android:textColor="#FFFFFF"
-                              android:textSize="12sp"
-                              android:textStyle="bold" />
-
-                          <TextView
-                              android:id="@+id/tvVpnBadge"
-                              android:layout_width="wrap_content"
-                              android:layout_height="wrap_content"
-                              android:layout_marginStart="8dp"
-                              android:background="@drawable/bg_vpn_badge"
-                              android:paddingStart="6dp"
-                              android:paddingEnd="6dp"
-                              android:paddingTop="2dp"
-                              android:paddingBottom="2dp"
-                              android:text="VPN"
-                              android:textColor="#FFFFFF"
-                              android:textSize="10sp"
-                              android:textStyle="bold"
-                              android:visibility="gone" />
-                      </LinearLayout>
+                          android:textSize="18sp" />
                   </LinearLayout>
               </LinearLayout>
 
+              <!-- Крупное название выбранного приложения слева прямо над доком (как "Netflix" / "YouTube" на 00:47) -->
               <LinearLayout
                   android:id="@+id/focusedTitleBlock"
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
-                  android:layout_marginStart="76dp"
-                  android:layout_marginBottom="10dp"
+                  android:layout_marginStart="68dp"
+                  android:layout_marginBottom="12dp"
                   android:orientation="vertical"
                   app:layout_constraintBottom_toTopOf="@id/dockGlassBar"
                   app:layout_constraintStart_toStartOf="parent">
@@ -397,34 +389,36 @@ jobs:
                       android:id="@+id/tvFocusedAppTitle"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
-                      android:text="Выберите приложение"
+                      android:text="YouTube"
                       android:textColor="#FFFFFF"
-                      android:textSize="22sp"
+                      android:textSize="32sp"
                       android:shadowColor="#AA000000"
                       android:shadowDx="0"
-                      android:shadowDy="2"
-                      android:shadowRadius="6"
+                      android:shadowDy="3"
+                      android:shadowRadius="8"
+                      android:textStyle="bold"
                       android:fontFamily="sans-serif-medium" />
 
                   <TextView
                       android:id="@+id/tvFocusedAppHint"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
-                      android:text="Удерживайте OK для перемещения  •  Кнопка «Смотрим» переназначена"
-                      android:textColor="#99FFFFFF"
+                      android:text="Удерживайте OK — скрыть или переместить"
+                      android:textColor="#80FFFFFF"
                       android:textSize="11sp" />
               </LinearLayout>
 
+              <!-- Стеклянный Док (6 иконок) с большим воздушным отступом сверху (150dp) -->
               <LinearLayout
                   android:id="@+id/dockGlassBar"
                   android:layout_width="0dp"
-                  android:layout_height="112dp"
-                  android:layout_marginStart="68dp"
-                  android:layout_marginEnd="68dp"
+                  android:layout_height="104dp"
+                  android:layout_marginStart="64dp"
+                  android:layout_marginEnd="64dp"
                   android:layout_marginTop="150dp"
                   android:background="@drawable/bg_dock_glass"
-                  android:paddingStart="16dp"
-                  android:paddingEnd="16dp"
+                  android:paddingStart="12dp"
+                  android:paddingEnd="12dp"
                   android:clipChildren="false"
                   android:clipToPadding="false"
                   android:gravity="center_vertical"
@@ -440,14 +434,15 @@ jobs:
                       android:clipToPadding="false" />
               </LinearLayout>
 
+              <!-- Нижняя сетка приложений (6 колонок, точно под карточками дока) -->
               <androidx.recyclerview.widget.RecyclerView
                   android:id="@+id/appsGrid"
                   android:layout_width="0dp"
                   android:layout_height="0dp"
-                  android:layout_marginTop="18dp"
-                  android:paddingStart="72dp"
-                  android:paddingEnd="72dp"
-                  android:paddingBottom="32dp"
+                  android:layout_marginTop="14dp"
+                  android:paddingStart="68dp"
+                  android:paddingEnd="68dp"
+                  android:paddingBottom="28dp"
                   android:clipChildren="false"
                   android:clipToPadding="false"
                   app:layout_constraintTop_toBottomOf="@id/dockGlassBar"
@@ -465,17 +460,17 @@ jobs:
               android:layout_height="wrap_content"
               android:clipChildren="false"
               android:clipToPadding="false"
-              android:padding="10dp">
+              android:padding="7dp">
 
               <FrameLayout
                   android:id="@+id/appCardView"
-                  android:layout_width="148dp"
-                  android:layout_height="84dp"
+                  android:layout_width="132dp"
+                  android:layout_height="76dp"
                   android:layout_gravity="center"
                   android:background="@drawable/bg_card_rounded"
                   android:clickable="true"
                   android:focusable="true"
-                  android:elevation="4dp">
+                  android:elevation="6dp">
 
                   <ImageView
                       android:id="@+id/appCardArtwork"
@@ -488,15 +483,15 @@ jobs:
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:layout_gravity="top|end"
-                      android:layout_margin="6dp"
-                      android:background="#CC007AFF"
+                      android:layout_margin="5dp"
+                      android:background="#DD007AFF"
                       android:paddingStart="6dp"
                       android:paddingEnd="6dp"
                       android:paddingTop="2dp"
                       android:paddingBottom="2dp"
-                      android:text="ДВИГАТЬ ◄ ►"
+                      android:text="◄ ДВИГАТЬ ►"
                       android:textColor="#FFFFFF"
-                      android:textSize="9sp"
+                      android:textSize="8sp"
                       android:textStyle="bold"
                       android:visibility="gone" />
 
@@ -550,7 +545,8 @@ jobs:
           import org.json.JSONObject
           import java.net.HttpURLConnection
           import java.net.URL
-          import java.util.Collections
+          import java.text.SimpleDateFormat
+          import java.util.*
           import kotlin.concurrent.thread
 
           data class AppEntry(
@@ -558,6 +554,7 @@ jobs:
               val packageName: String,
               val icon: Drawable,
               val banner: Drawable?,
+              val brandColor: Int,
               val cardBitmap: Bitmap
           )
 
@@ -582,45 +579,141 @@ jobs:
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_main)
 
-                  prefs = getSharedPreferences("apple_tv_ultimate_prefs", Context.MODE_PRIVATE)
+                  prefs = getSharedPreferences("apple_tv_vibetv_prefs", Context.MODE_PRIVATE)
 
-                  setupTopButtons()
-                  applyWallpaperTheme()
+                  setupTopHeader()
+                  applyWallpaperTheme(Color.parseColor("#1D3557"))
                   refreshApps()
                   startStatusAndWeatherUpdates()
                   registerBuiltInAirPlayService()
               }
 
-              private fun setupTopButtons() {
-                  findViewById<View>(R.id.btnAiAssistant).apply {
-                      setupPillFocusAnimation(this)
-                      setOnClickListener { openBuiltInAiWebView() }
-                  }
+              private fun setupTopHeader() {
+                  updateGreetingAndDate()
+
                   findViewById<View>(R.id.btnSources).apply {
                       setupPillFocusAnimation(this)
+                      setOnClickListener { showSourcesPopupMenu(this) }
+                  }
+
+                  findViewById<View>(R.id.btnWifiStatus).apply {
+                      setupPillFocusAnimation(this)
                       setOnClickListener {
-                          try {
-                              startActivity(Intent("com.android.tv.action.VIEW_INPUTS"))
-                          } catch (_: Exception) {
-                              Toast.makeText(this@MainActivity, "Входы управляются системным меню ТВ", Toast.LENGTH_SHORT).show()
-                          }
+                          // Быстрый переход к VPN или настройкам сети (как на 00:53 в видео)
+                          launchVpnOrSettings()
+                      }
+                      setOnLongClickListener {
+                          try { startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) } catch (_: Exception) {}
+                          true
                       }
                   }
+
                   findViewById<View>(R.id.btnSettings).apply {
                       setupPillFocusAnimation(this)
                       setOnClickListener { showAppleTvSettingsDialog() }
                   }
               }
 
+              private fun updateGreetingAndDate() {
+                  val cal = Calendar.getInstance()
+                  val hour = cal.get(Calendar.HOUR_OF_DAY)
+                  val greeting = when (hour) {
+                      in 5..11 -> "ДОБРОЕ УТРО"
+                      in 12..17 -> "ДОБРЫЙ ДЕНЬ"
+                      in 18..22 -> "ДОБРЫЙ ВЕЧЕР"
+                      else -> "ДОБРОЙ НОЧИ"
+                  }
+                  findViewById<TextView>(R.id.tvGreeting).text = greeting
+
+                  val locale = Locale("ru")
+                  val dayOfWeek = SimpleDateFormat("EEEE", locale).format(cal.time).uppercase(locale)
+                  val dayAndMonth = SimpleDateFormat("d MMMM", locale).format(cal.time).uppercase(locale)
+                  findViewById<TextView>(R.id.tvDateTwoLine).text = "$dayOfWeek\n$dayAndMonth"
+              }
+
+              // Выпадающее меню входов HDMI1 / HDMI2 / HDMI3 / AV точь-в-точь как на 00:51 в видео
+              private fun showSourcesPopupMenu(anchor: View) {
+                  val popup = PopupMenu(this, anchor)
+                  popup.menu.add(0, 1, 0, "🔌  HDMI 1")
+                  popup.menu.add(0, 2, 1, "🔌  HDMI 2")
+                  popup.menu.add(0, 3, 2, "🔌  HDMI 3")
+                  popup.menu.add(0, 4, 3, "📼  AV")
+                  popup.setOnMenuItemClickListener {
+                      try {
+                          startActivity(Intent("com.android.tv.action.VIEW_INPUTS"))
+                      } catch (_: Exception) {
+                          try {
+                              startActivity(Intent(Settings.ACTION_SETTINGS))
+                          } catch (_: Exception) {}
+                      }
+                      true
+                  }
+                  popup.show()
+              }
+
               private fun setupPillFocusAnimation(view: View) {
                   view.setOnFocusChangeListener { v, hasFocus ->
                       v.animate()
-                          .scaleX(if (hasFocus) 1.08f else 1.0f)
-                          .scaleY(if (hasFocus) 1.08f else 1.0f)
+                          .scaleX(if (hasFocus) 1.10f else 1.0f)
+                          .scaleY(if (hasFocus) 1.10f else 1.0f)
                           .translationZ(if (hasFocus) 16f else 0f)
                           .setDuration(180)
                           .start()
                   }
+              }
+
+              // =========================================================================
+              // СПИСОК ПРИЛОЖЕНИЙ + СКРЫТИЕ ПРИЛОЖЕНИЙ + БРЕНДИРОВАННЫЕ КАРТОЧКИ VIBETV
+              // =========================================================================
+              private fun getHiddenPackages(): MutableSet<String> {
+                  return (prefs.getStringSet("hidden_packages", emptySet()) ?: emptySet()).toMutableSet()
+              }
+
+              private fun hidePackage(pkg: String, label: String) {
+                  val set = getHiddenPackages()
+                  set.add(pkg)
+                  prefs.edit().putStringSet("hidden_packages", set).apply()
+                  refreshApps()
+                  Toast.makeText(this, "Приложение «$label» скрыто. Вернуть можно в Настройках ⚙", Toast.LENGTH_LONG).show()
+              }
+
+              private fun showHiddenPackagesManagerDialog() {
+                  val hidden = getHiddenPackages().toList()
+                  if (hidden.isEmpty()) {
+                      Toast.makeText(this, "Список скрытых приложений пуст", Toast.LENGTH_SHORT).show()
+                      return
+                  }
+                  val pm = packageManager
+                  val labels = hidden.map { pkg ->
+                      try {
+                          pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString() + " ($pkg)"
+                      } catch (_: Exception) {
+                          pkg
+                      }
+                  }.toTypedArray()
+
+                  val checked = BooleanArray(hidden.size) { true }
+
+                  AlertDialog.Builder(this)
+                      .setTitle("👁 Скрытые приложения (снимите галочку, чтобы вернуть)")
+                      .setMultiChoiceItems(labels, checked) { _, which, isChecked ->
+                          checked[which] = isChecked
+                      }
+                      .setPositiveButton("Сохранить") { _, _ ->
+                          val newSet = mutableSetOf<String>()
+                          for (i in hidden.indices) {
+                              if (checked[i]) newSet.add(hidden[i])
+                          }
+                          prefs.edit().putStringSet("hidden_packages", newSet).apply()
+                          refreshApps()
+                          Toast.makeText(this, "Список приложений обновлен", Toast.LENGTH_SHORT).show()
+                      }
+                      .setNegativeButton("Показать все") { _, _ ->
+                          prefs.edit().remove("hidden_packages").apply()
+                          refreshApps()
+                          Toast.makeText(this, "Все скрытые приложения восстановлены", Toast.LENGTH_SHORT).show()
+                      }
+                      .show()
               }
 
               private fun isJunkSystemApp(pkg: String, label: String, appInfo: ApplicationInfo): Boolean {
@@ -632,7 +725,8 @@ jobs:
                       "vlc", "kodi", "plex", "num", "lampa", "torrserve", "smarttube", "rutube",
                       "vkvideo", "vk.video", "v2ray", "nekobox", "outline", "wireguard", "openvpn",
                       "adguard", "hidemy", "windscribe", "proton", "psiphon", "chrome", "firefox",
-                      "opera", "sendfiles", "cxinventor", "plombir", "zona", "hdrezka", "spotify"
+                      "opera", "sendfiles", "cxinventor", "plombir", "zona", "hdrezka", "spotify",
+                      "twitch", "netflix", "happ", "apple"
                   )
                   if (whitelist.any { p.contains(it) || l.contains(it) }) return false
 
@@ -657,13 +751,16 @@ jobs:
               private fun refreshApps() {
                   val pm = packageManager
                   val rawMap = mutableMapOf<String, ResolveInfo>()
+                  val hiddenSet = getHiddenPackages()
 
                   val mainIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
                   val tvIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
 
                   for (info in pm.queryIntentActivities(mainIntent, 0) + pm.queryIntentActivities(tvIntent, 0)) {
                       val pkg = info.activityInfo.packageName
-                      if (pkg != packageName) rawMap[pkg] = info
+                      if (pkg != packageName && !hiddenSet.contains(pkg)) {
+                          rawMap[pkg] = info
+                      }
                   }
 
                   val filtered = mutableListOf<AppEntry>()
@@ -674,8 +771,9 @@ jobs:
 
                       val icon = info.loadIcon(pm)
                       val banner = info.activityInfo.loadBanner(pm) ?: appInfo.loadBanner(pm)
-                      val bmp = renderTvOsCardBitmap(label, pkg, icon, banner)
-                      filtered.add(AppEntry(label, pkg, icon, banner, bmp))
+                      val brandColor = detectBrandColor(label, pkg)
+                      val bmp = renderVibeTvCardBitmap(label, pkg, icon, banner, brandColor)
+                      filtered.add(AppEntry(label, pkg, icon, banner, brandColor, bmp))
                   }
 
                   val savedOrder = (prefs.getString("saved_app_order", "") ?: "")
@@ -704,9 +802,31 @@ jobs:
                   prefs.edit().putString("saved_app_order", combined).apply()
               }
 
-              private fun renderTvOsCardBitmap(label: String, pkg: String, icon: Drawable, banner: Drawable?): Bitmap {
+              // Фирменные цвета плиток точно как в видео VibeTV на 00:49
+              private fun detectBrandColor(label: String, pkg: String): Int {
+                  val s = "$label $pkg".lowercase()
+                  return when {
+                      s.contains("youtube") || s.contains("smarttube") -> Color.parseColor("#F5F5F7") // Белая карточка YouTube как в видео
+                      s.contains("netflix") -> Color.parseColor("#F5F5F7")
+                      s.contains("okko") -> Color.parseColor("#5E2B97") // Фиолетовый Okko
+                      s.contains("кинопоиск") || s.contains("kinopoisk") -> Color.parseColor("#FF5500")
+                      s.contains("twitch") -> Color.parseColor("#6441A5")
+                      s.contains("rutube") -> Color.parseColor("#4B2882")
+                      s.contains("spotify") -> Color.parseColor("#18181C")
+                      s.contains("vk") -> Color.parseColor("#19191D")
+                      s.contains("wink") || s.contains("винк") -> Color.parseColor("#FF5C00")
+                      s.contains("иви") || s.contains("ivi") -> Color.parseColor("#EA003D")
+                      s.contains("happ") || s.contains("v2ray") || s.contains("vpn") -> Color.parseColor("#1C2430")
+                      else -> {
+                          val hash = pkg.hashCode()
+                          Color.HSVToColor(floatArrayOf(((hash and 0xFF) % 360).toFloat(), 0.60f, 0.28f))
+                      }
+                  }
+              }
+
+              private fun renderVibeTvCardBitmap(label: String, pkg: String, icon: Drawable, banner: Drawable?, brandColor: Int): Bitmap {
                   val width = 320
-                  val height = 180
+                  val height = 184
                   val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                   val canvas = Canvas(bmp)
 
@@ -716,53 +836,58 @@ jobs:
                       return bmp
                   }
 
-                  val hash = pkg.hashCode()
-                  val c1 = Color.HSVToColor(floatArrayOf(((hash and 0xFF) % 360).toFloat(), 0.55f, 0.32f))
-                  val c2 = Color.HSVToColor(floatArrayOf((((hash shr 8) and 0xFF) % 360).toFloat(), 0.70f, 0.16f))
+                  val isLightCard = brandColor == Color.parseColor("#F5F5F7")
+                  val c2 = if (isLightCard) Color.parseColor("#E5E5EA") else manipulateColor(brandColor, 0.65f)
 
                   val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-                  paint.shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), c1, c2, Shader.TileMode.CLAMP)
+                  paint.shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), brandColor, c2, Shader.TileMode.CLAMP)
                   canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 
-                  val iconSize = 78
+                  // Рисуем иконку и название в стиле горизонтального логотипа Apple TV
+                  val iconSize = 68
                   val left = (width - iconSize) / 2
                   val top = (height - iconSize) / 2 - 14
                   icon.setBounds(left, top, left + iconSize, top + iconSize)
                   icon.draw(canvas)
 
                   val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                      color = Color.WHITE
+                      color = if (isLightCard) Color.parseColor("#111111") else Color.WHITE
                       textSize = 21f
                       typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                       textAlign = Paint.Align.CENTER
-                      setShadowLayer(4f, 0f, 2f, Color.BLACK)
+                      if (!isLightCard) setShadowLayer(4f, 0f, 2f, Color.BLACK)
                   }
-                  val shortLabel = if (label.length > 16) label.take(14) + "…" else label
+                  val shortLabel = if (label.length > 15) label.take(13) + "…" else label
                   canvas.drawText(shortLabel, width / 2f, height - 20f, textPaint)
 
                   return bmp
               }
 
-              private fun setupAdapters() {
-                  val dockRv = findViewById<RecyclerView>(R.id.dockRecycler)
-                  dockRv.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-                  dockRv.adapter = createCardAdapter(dockApps, isDock = true)
-
-                  val gridRv = findViewById<RecyclerView>(R.id.appsGrid)
-                  gridRv.layoutManager = GridLayoutManager(this, 5)
-                  gridRv.adapter = createCardAdapter(gridApps, isDock = false)
+              private fun manipulateColor(color: Int, factor: Float): Int {
+                  val a = Color.alpha(color)
+                  val r = Math.round(Color.red(color) * factor).coerceAtMost(255)
+                  val g = Math.round(Color.green(color) * factor).coerceAtMost(255)
+                  val b = Math.round(Color.blue(color) * factor).coerceAtMost(255)
+                  return Color.argb(a, r, g, b)
               }
 
-              private fun createCardAdapter(list: MutableList<AppEntry>, isDock: Boolean): RecyclerView.Adapter<RecyclerView.ViewHolder> {
+              // =========================================================================
+              // СЕТКА И ДОК ПО 6 КОЛОНОК + КОНТЕКСТНОЕ МЕНЮ (СКРЫТЬ / ДВИГАТЬ)
+              // =========================================================================
+              private fun setupAdapters() {
+                  val dockRv = findViewById<RecyclerView>(R.id.dockRecycler)
+                  dockRv.layoutManager = GridLayoutManager(this, 6)
+                  dockRv.adapter = createCardAdapter(dockApps)
+
+                  val gridRv = findViewById<RecyclerView>(R.id.appsGrid)
+                  gridRv.layoutManager = GridLayoutManager(this, 6)
+                  gridRv.adapter = createCardAdapter(gridApps)
+              }
+
+              private fun createCardAdapter(list: MutableList<AppEntry>): RecyclerView.Adapter<RecyclerView.ViewHolder> {
                   return object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                       override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
                           val v = layoutInflater.inflate(R.layout.item_app_tile, parent, false)
-                          if (isDock) {
-                              v.layoutParams = RecyclerView.LayoutParams(
-                                  ViewGroup.LayoutParams.WRAP_CONTENT,
-                                  ViewGroup.LayoutParams.WRAP_CONTENT
-                              )
-                          }
                           return object : RecyclerView.ViewHolder(v) {}
                       }
 
@@ -784,24 +909,25 @@ jobs:
                           cardView.setOnFocusChangeListener { v, hasFocus ->
                               if (hasFocus) {
                                   findViewById<TextView>(R.id.tvFocusedAppTitle).text = app.label
+                                  applyWallpaperTheme(app.brandColor)
                                   v.animate()
-                                      .scaleX(1.13f)
-                                      .scaleY(1.13f)
-                                      .translationY(-6f)
+                                      .scaleX(1.12f)
+                                      .scaleY(1.12f)
+                                      .translationY(-5f)
                                       .translationZ(28f)
                                       .setInterpolator(OvershootInterpolator(1.3f))
-                                      .setDuration(210)
+                                      .setDuration(200)
                                       .start()
-                                  border.animate().alpha(1f).setDuration(150).start()
+                                  border.animate().alpha(1f).setDuration(140).start()
                               } else {
                                   v.animate()
                                       .scaleX(1.0f)
                                       .scaleY(1.0f)
                                       .translationY(0f)
                                       .translationZ(0f)
-                                      .setDuration(180)
+                                      .setDuration(170)
                                       .start()
-                                  border.animate().alpha(0f).setDuration(150).start()
+                                  border.animate().alpha(0f).setDuration(140).start()
                               }
                           }
 
@@ -810,18 +936,41 @@ jobs:
                                   movingPackage = null
                                   badge.visibility = View.GONE
                                   saveCurrentAppOrder()
-                                  Toast.makeText(this@MainActivity, "Положение «${app.label}» сохранено", Toast.LENGTH_SHORT).show()
+                                  Toast.makeText(this@MainActivity, "Позиция «${app.label}» сохранена", Toast.LENGTH_SHORT).show()
                               } else {
                                   launchPackage(app.packageName)
                               }
                           }
 
+                          // Долгое нажатие OK: меню карточки (Скрыть приложение / Переместить / Открыть)
                           cardView.setOnLongClickListener {
-                              movingPackage = if (movingPackage == app.packageName) null else app.packageName
-                              badge.visibility = if (movingPackage == app.packageName) View.VISIBLE else View.GONE
-                              if (movingPackage != null) {
-                                  Toast.makeText(this@MainActivity, "Двигайте «${app.label}» стрелками ◄ ► и нажмите OK", Toast.LENGTH_SHORT).show()
-                              }
+                              val options = arrayOf(
+                                  "↔️ Переместить карточку (стрелками ◄ ►)",
+                                  "👁 Скрыть «${app.label}» с главного экрана",
+                                  "▶️ Открыть «${app.label}»",
+                                  "ℹ️ О приложении (системное меню)"
+                              )
+                              AlertDialog.Builder(this@MainActivity)
+                                  .setTitle(app.label)
+                                  .setItems(options) { _, which ->
+                                      when (which) {
+                                          0 -> {
+                                              movingPackage = app.packageName
+                                              badge.visibility = View.VISIBLE
+                                              Toast.makeText(this@MainActivity, "Двигайте «${app.label}» стрелками ◄ ► и нажмите OK", Toast.LENGTH_SHORT).show()
+                                          }
+                                          1 -> hidePackage(app.packageName, app.label)
+                                          2 -> launchPackage(app.packageName)
+                                          3 -> {
+                                              try {
+                                                  val i = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                                  i.data = Uri.parse("package:${app.packageName}")
+                                                  startActivity(i)
+                                              } catch (_: Exception) {}
+                                          }
+                                      }
+                                  }
+                                  .show()
                               true
                           }
 
@@ -855,48 +1004,45 @@ jobs:
                   }
               }
 
-              private fun applyWallpaperTheme() {
+              // =========================================================================
+              // ДИНАМИЧЕСКИЙ ФОН VIBE TV + ЖИВЫЕ ОБОИ APPLE AERIAL
+              // =========================================================================
+              private fun applyWallpaperTheme(accentColor: Int) {
                   val mode = prefs.getInt("wallpaper_mode", 0)
                   val videoView = findViewById<VideoView>(R.id.aerialVideoView)
                   val ambientView = findViewById<View>(R.id.ambientGlowView)
 
-                  if (mode == 0 || mode == 1) {
-                      videoView.visibility = View.VISIBLE
-                      val url = aerialUrls[mode % aerialUrls.size]
-                      try {
-                          videoView.setVideoURI(Uri.parse(url))
-                          videoView.setOnPreparedListener { mp ->
-                              mp.isLooping = true
-                              mp.setVolume(0f, 0f)
-                              videoView.start()
-                          }
-                          videoView.setOnErrorListener { _, _, _ ->
-                              videoView.visibility = View.GONE
-                              setStaticGradient(ambientView, 2)
-                              true
-                          }
-                          ambientView.background = GradientDrawable(
-                              GradientDrawable.Orientation.TOP_BOTTOM,
-                              intArrayOf(Color.parseColor("#8804060C"), Color.parseColor("#4404060C"), Color.parseColor("#CC020305"))
-                          )
-                      } catch (_: Exception) {
-                          videoView.visibility = View.GONE
-                          setStaticGradient(ambientView, 2)
+                  if (mode == 3 || mode == 4) {
+                      if (videoView.visibility != View.VISIBLE) {
+                          videoView.visibility = View.VISIBLE
+                          val url = aerialUrls[mode % aerialUrls.size]
+                          try {
+                              videoView.setVideoURI(Uri.parse(url))
+                              videoView.setOnPreparedListener { mp ->
+                                  mp.isLooping = true
+                                  mp.setVolume(0f, 0f)
+                                  videoView.start()
+                              }
+                          } catch (_: Exception) {}
                       }
+                      ambientView.background = GradientDrawable(
+                          GradientDrawable.Orientation.TOP_BOTTOM,
+                          intArrayOf(Color.parseColor("#8804060C"), Color.parseColor("#4404060C"), Color.parseColor("#CC020305"))
+                      )
                   } else {
                       videoView.stopPlayback()
                       videoView.visibility = View.GONE
-                      setStaticGradient(ambientView, mode)
+                      val colors = when (mode) {
+                          0 -> {
+                              // Динамическое атмосферное свечение VibeTV как на видео (00:47)
+                              val glow = if (accentColor == Color.parseColor("#F5F5F7")) Color.parseColor("#1E3A5F") else manipulateColor(accentColor, 0.55f)
+                              intArrayOf(glow, Color.parseColor("#0B132B"), Color.parseColor("#05070F"))
+                          }
+                          1 -> intArrayOf(Color.parseColor("#182B49"), Color.parseColor("#090E1A"), Color.parseColor("#020305"))
+                          else -> intArrayOf(Color.parseColor("#3B1C32"), Color.parseColor("#180B1A"), Color.parseColor("#040205"))
+                      }
+                      ambientView.background = GradientDrawable(GradientDrawable.Orientation.TL_BR, colors)
                   }
-              }
-
-              private fun setStaticGradient(view: View, mode: Int) {
-                  val colors = when (mode) {
-                      2 -> intArrayOf(Color.parseColor("#182B49"), Color.parseColor("#090E1A"), Color.parseColor("#020305"))
-                      3 -> intArrayOf(Color.parseColor("#0F382F"), Color.parseColor("#061715"), Color.parseColor("#020404"))
-                      else -> intArrayOf(Color.parseColor("#3B1C32"), Color.parseColor("#180B1A"), Color.parseColor("#040205"))
-                  }
-                  view.background = GradientDrawable(GradientDrawable.Orientation.TR_BL, colors)
               }
 
               private fun startStatusAndWeatherUpdates() {
@@ -905,40 +1051,25 @@ jobs:
 
                   mainHandler.postDelayed(object : Runnable {
                       override fun run() {
+                          updateGreetingAndDate()
                           updateNetworkAndVpnStatus()
-                          mainHandler.postDelayed(this, 5000)
+                          mainHandler.postDelayed(this, 6000)
                       }
-                  }, 5000)
+                  }, 6000)
               }
 
               private fun updateNetworkAndVpnStatus() {
                   val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-                  val tvNet = findViewById<TextView>(R.id.tvNetStatus)
-                  val tvVpn = findViewById<TextView>(R.id.tvVpnBadge)
+                  val vpnDot = findViewById<View>(R.id.vpnActiveDot)
 
                   var isVpn = false
-                  var netLabel = "Нет сети"
-
-                  val activeNet = cm.activeNetwork
-                  val caps = if (activeNet != null) cm.getNetworkCapabilities(activeNet) else null
-                  if (caps != null) {
-                      netLabel = when {
-                          caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "🔌 Ethernet"
-                          caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "📶 Wi-Fi"
-                          else -> "🌐 Онлайн"
-                      }
-                      if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) isVpn = true
-                  }
-
                   for (net in cm.allNetworks) {
                       val c = cm.getNetworkCapabilities(net)
                       if (c != null && c.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
                           isVpn = true
                       }
                   }
-
-                  tvNet.text = netLabel
-                  tvVpn.visibility = if (isVpn) View.VISIBLE else View.GONE
+                  vpnDot.visibility = if (isVpn) View.VISIBLE else View.GONE
               }
 
               private fun fetchLiveWeather() {
@@ -951,24 +1082,11 @@ jobs:
                           val text = conn.inputStream.bufferedReader().readText()
                           val current = JSONObject(text).getJSONObject("current_weather")
                           val temp = Math.round(current.getDouble("temperature"))
-                          val code = current.getInt("weathercode")
-                          val icon = when (code) {
-                              0 -> "☀️"
-                              1, 2, 3 -> "⛅"
-                              45, 48 -> "🌫"
-                              51, 53, 55, 61, 63, 65 -> "🌧"
-                              71, 73, 75 -> "❄️"
-                              else -> "🌤"
-                          }
                           val sign = if (temp > 0) "+$temp" else "$temp"
                           mainHandler.post {
-                              findViewById<TextView>(R.id.tvWeather).text = "$icon ${sign}°C"
+                              findViewById<TextView>(R.id.tvWeather).text = "⛅ ${sign}°C"
                           }
-                      } catch (_: Exception) {
-                          mainHandler.post {
-                              findViewById<TextView>(R.id.tvWeather).text = "⛅ +18°C"
-                          }
-                      }
+                      } catch (_: Exception) {}
                   }
               }
 
@@ -978,22 +1096,18 @@ jobs:
                       orientation = LinearLayout.VERTICAL
                       setBackgroundColor(Color.parseColor("#0B0D14"))
                   }
-
                   val topBar = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       gravity = Gravity.CENTER_VERTICAL
                       setPadding(36, 20, 36, 20)
                       setBackgroundColor(Color.parseColor("#161924"))
                   }
-
                   val title = TextView(this).apply {
-                      text = "✨ Голосовой и текстовый ИИ-помощник (Siri / Gemini / ChatGPT)"
+                      text = "✨ Siri / Gemini / ChatGPT"
                       setTextColor(Color.WHITE)
                       textSize = 16f
                   }
-
                   val webView = WebView(this)
-
                   val btnGemini = Button(this).apply {
                       text = "Gemini"
                       setOnClickListener { webView.loadUrl("https://gemini.google.com") }
@@ -1006,7 +1120,6 @@ jobs:
                       text = "Закрыть ✕"
                       setOnClickListener { dialog.dismiss() }
                   }
-
                   topBar.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
                   topBar.addView(btnGemini)
                   topBar.addView(btnChatGpt)
@@ -1016,17 +1129,13 @@ jobs:
                       javaScriptEnabled = true
                       domStorageEnabled = true
                       cacheMode = WebSettings.LOAD_DEFAULT
-                      userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
                   }
                   webView.webViewClient = WebViewClient()
                   webView.webChromeClient = WebChromeClient()
+                  webView.loadUrl(prefs.getString("ai_default_url", "https://chatgpt.com") ?: "https://chatgpt.com")
 
-                  val defaultAiUrl = prefs.getString("ai_default_url", "https://chatgpt.com") ?: "https://chatgpt.com"
-                  webView.loadUrl(defaultAiUrl)
-
-                  container.addView(topBar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+                  container.addView(topBar)
                   container.addView(webView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
-
                   dialog.setContentView(container)
                   dialog.show()
               }
@@ -1035,7 +1144,7 @@ jobs:
                   try {
                       nsdManager = getSystemService(Context.NSD_SERVICE) as NsdManager
                       val serviceInfo = NsdServiceInfo().apply {
-                          serviceName = "Apple TV"
+                          serviceName = "TV-BOX"
                           serviceType = "_airplay._tcp."
                           port = 7000
                       }
@@ -1056,12 +1165,11 @@ jobs:
                           .putInt("custom_smotrim_keycode", keyCode)
                           .putBoolean("capture_next_key", false)
                           .apply()
-                      Toast.makeText(this, "Кнопка пульта (код $keyCode) успешно привязана!", Toast.LENGTH_LONG).show()
+                      Toast.makeText(this, "Кнопка пульта (код $keyCode) привязана!", Toast.LENGTH_LONG).show()
                       return true
                   }
 
                   val savedSmotrimCode = prefs.getInt("custom_smotrim_keycode", -1)
-
                   if (keyCode == savedSmotrimCode || keyCode in listOf(183, 184, 185, 186, 269, 270, 271, 10001, 10002)) {
                       executeMappedRemoteAction()
                       return true
@@ -1087,7 +1195,7 @@ jobs:
               }
 
               private fun launchVpnOrSettings() {
-                  val vpnKeywords = listOf("vpn", "v2ray", "nekobox", "outline", "wireguard", "openvpn", "adguard", "windscribe", "proton", "hidemy")
+                  val vpnKeywords = listOf("happ", "vpn", "v2ray", "nekobox", "outline", "wireguard", "openvpn", "adguard", "windscribe", "proton", "hidemy")
                   val vpnApp = allApps.firstOrNull { app ->
                       vpnKeywords.any { kw -> app.label.lowercase().contains(kw) || app.packageName.lowercase().contains(kw) }
                   }
@@ -1107,59 +1215,63 @@ jobs:
                   val found = allApps.firstOrNull { app ->
                       keywords.any { kw -> app.label.lowercase().contains(kw) || app.packageName.lowercase().contains(kw) }
                   }
-                  if (found != null) {
-                      launchPackage(found.packageName)
-                  } else {
-                      Toast.makeText(this, "Приложение не найдено, откройте Настройки ⚙", Toast.LENGTH_SHORT).show()
-                  }
+                  if (found != null) launchPackage(found.packageName)
               }
 
               private fun launchPackage(pkg: String) {
                   val intent = packageManager.getLaunchIntentForPackage(pkg)
                       ?: packageManager.getLeanbackLaunchIntentForPackage(pkg)
-                  if (intent != null) {
-                      startActivity(intent)
-                  }
+                  if (intent != null) startActivity(intent)
               }
 
               private fun showAppleTvSettingsDialog() {
+                  val hiddenCount = getHiddenPackages().size
                   val items = arrayOf(
-                      "🎬 Обои: Живые 4K видео Apple Aerial (Режим 1)",
-                      "🌆 Обои: Живые 4K видео Apple Aerial (Режим 2)",
-                      "🌌 Обои: Градиент Cupertino Midnight",
-                      "🟢 Обои: Градиент Aurora Borealis",
+                      "👁 Управление скрытыми приложениями (скрыто: $hiddenCount)",
+                      "✨ Открыть голосовой/текстовый ИИ (Siri / Gemini / ChatGPT)",
                       "🎮 Назначить действие на кнопку «СМОТРИМ» (VPN / Wink и др.)",
                       "🎯 Захватить физическую кнопку «СМОТРИМ» с пульта",
-                      "🤖 Выбрать ИИ по умолчанию (ChatGPT / Gemini)",
-                      "🔄 Сбросить сортировку иконок по умолчанию",
-                      "⚙️ Открыть системные настройки Android TV"
+                      "🎨 Обои: Динамическое свечение VibeTV (как на видео)",
+                      "🌌 Обои: Глубокий синий Cupertino Midnight",
+                      "🌅 Обои: Градиент California Sunset",
+                      "🎬 Обои: Живое 4K видео Apple Aerial",
+                      "🔄 Сбросить порядок иконок по умолчанию",
+                      "⚙️ Системные настройки Android TV"
                   )
 
                   AlertDialog.Builder(this)
-                      .setTitle(" Настройки Apple TV Launcher v5.0")
+                      .setTitle(" Настройки VibeTV (Apple TV Launcher)")
                       .setItems(items) { _, which ->
                           when (which) {
-                              0, 1, 2, 3 -> {
-                                  prefs.edit().putInt("wallpaper_mode", which).apply()
-                                  applyWallpaperTheme()
-                              }
-                              4 -> showButtonActionPicker()
-                              5 -> {
+                              0 -> showHiddenPackagesManagerDialog()
+                              1 -> openBuiltInAiWebView()
+                              2 -> showButtonActionPicker()
+                              3 -> {
                                   prefs.edit().putBoolean("capture_next_key", true).apply()
-                                  Toast.makeText(this, "Нажмите сейчас кнопку «СМОТРИМ» на вашем пульте!", Toast.LENGTH_LONG).show()
+                                  Toast.makeText(this, "Нажмите сейчас кнопку «СМОТРИМ» на пульте!", Toast.LENGTH_LONG).show()
+                              }
+                              4 -> {
+                                  prefs.edit().putInt("wallpaper_mode", 0).apply()
+                                  applyWallpaperTheme(Color.parseColor("#1D3557"))
+                              }
+                              5 -> {
+                                  prefs.edit().putInt("wallpaper_mode", 1).apply()
+                                  applyWallpaperTheme(Color.parseColor("#1D3557"))
                               }
                               6 -> {
-                                  val current = prefs.getString("ai_default_url", "https://chatgpt.com")
-                                  val next = if (current?.contains("chatgpt") == true) "https://gemini.google.com" else "https://chatgpt.com"
-                                  prefs.edit().putString("ai_default_url", next).apply()
-                                  Toast.makeText(this, "ИИ по умолчанию изменен на: $next", Toast.LENGTH_SHORT).show()
+                                  prefs.edit().putInt("wallpaper_mode", 2).apply()
+                                  applyWallpaperTheme(Color.parseColor("#3B1C32"))
                               }
                               7 -> {
+                                  prefs.edit().putInt("wallpaper_mode", 3).apply()
+                                  applyWallpaperTheme(Color.BLACK)
+                              }
+                              8 -> {
                                   prefs.edit().remove("saved_app_order").apply()
                                   refreshApps()
-                                  Toast.makeText(this, "Сортировка сброшена", Toast.LENGTH_SHORT).show()
+                                  Toast.makeText(this, "Порядок иконок сброшен", Toast.LENGTH_SHORT).show()
                               }
-                              8 -> startActivity(Intent(Settings.ACTION_SETTINGS))
+                              9 -> startActivity(Intent(Settings.ACTION_SETTINGS))
                           }
                       }
                       .show()
@@ -1167,10 +1279,10 @@ jobs:
 
               private fun showButtonActionPicker() {
                   val labels = mutableListOf(
-                      "🛡 Включить VPN клиент (или системный VPN)",
+                      "🛡 Включить VPN (Happ / v2rayNG / Системный VPN)",
                       "🎬 Запустить Wink (Винк)",
                       "🍿 Запустить Кинопоиск",
-                      "▶️ Запустить YouTube / SmartTube",
+                      "▶️ Запустить YouTube",
                       "✨ Открыть Siri / Gemini / ChatGPT"
                   )
                   val values = mutableListOf("vpn", "wink", "kinopoisk", "youtube", "ai")
@@ -1188,22 +1300,6 @@ jobs:
                       }
                       .show()
               }
-
-              override fun onResume() {
-                  super.onResume()
-                  updateNetworkAndVpnStatus()
-                  val mode = prefs.getInt("wallpaper_mode", 0)
-                  if (mode == 0 || mode == 1) {
-                      findViewById<VideoView>(R.id.aerialVideoView).start()
-                  }
-              }
-
-              override fun onDestroy() {
-                  super.onDestroy()
-                  try {
-                      registrationListener?.let { nsdManager?.unregisterService(it) }
-                  } catch (_: Exception) {}
-              }
           }
           EOF
 
@@ -1213,5 +1309,5 @@ jobs:
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppleTV-Vibe-Launcher-v5.0-Ultimate
+          name: AppleTV-Vibe-Launcher-v6.0
           path: app/build/outputs/apk/debug/app-debug.apk
