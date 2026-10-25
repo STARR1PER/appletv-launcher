@@ -19,7 +19,7 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Create Project Files
+      - name: Create Project Files & Gradle Wrapper
         run: |
           mkdir -p app/src/main/java/com/appletv/launcher
           mkdir -p app/src/main/res/layout
@@ -65,8 +65,8 @@ jobs:
                   applicationId "com.appletv.launcher"
                   minSdk 26
                   targetSdk 34
-                  versionCode 17
-                  versionName "4.5.0"
+                  versionCode 18
+                  versionName "4.6.0"
               }
               buildTypes {
                   release { minifyEnabled false }
@@ -173,7 +173,6 @@ jobs:
 
               <View android:id="@+id/ambientGlowView" android:layout_width="match_parent" android:layout_height="match_parent" />
 
-              <!-- Верхняя панель: только часы и минимум нужных кнопок -->
               <LinearLayout
                   android:id="@+id/topHeader"
                   android:layout_width="0dp" android:layout_height="wrap_content"
@@ -261,7 +260,6 @@ jobs:
                   refreshApps()
               }
 
-              // Перехват кнопок пульта (Okko / Ivi / сторонние) для запуска YouTube или Кинопоиска
               override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
                   if (keyCode == 183 || keyCode == 269 || keyCode == 10001) {
                       launchApp("youtube")
@@ -300,7 +298,6 @@ jobs:
                   }
                   allApps = list
 
-                  // Приятный градиент фона
                   val ambientView = findViewById<View>(R.id.ambientGlowView)
                   ambientView.background = GradientDrawable(
                       GradientDrawable.Orientation.TR_BL,
@@ -323,11 +320,14 @@ jobs:
           }
           EOF
 
+          gradle wrapper --gradle-version 8.2 --distribution-type bin
+          chmod +x gradlew
+
       - name: Compile Debug APK
         run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppleTV-Vibe-Launcher-v4.5
+          name: AppleTV-Vibe-Launcher-v4.6
           path: app/build/outputs/apk/debug/app-debug.apk
