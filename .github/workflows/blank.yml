@@ -28,7 +28,7 @@ jobs:
           gradle wrapper --gradle-version 8.2
           chmod +x gradlew
 
-      - name: Generate Apple VibeTV Source Code
+      - name: Generate Apple VibeTV v3.2 Source Code
         run: |
           mkdir -p app/src/main/java/com/appletv/launcher
           mkdir -p app/src/main/res/layout
@@ -84,8 +84,8 @@ jobs:
                   applicationId "com.appletv.launcher"
                   minSdk 26
                   targetSdk 34
-                  versionCode 3
-                  versionName "3.0.0"
+                  versionCode 5
+                  versionName "3.2.0"
               }
 
               buildTypes {
@@ -148,12 +148,12 @@ jobs:
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <color name="tvos_bg_dark">#06070B</color>
+              <color name="tvos_bg_dark">#050608</color>
               <color name="tvos_text_primary">#FFFFFF</color>
-              <color name="tvos_text_secondary">#A6AEB9</color>
-              <color name="tvos_dock_glass">#1AFFFFFF</color>
-              <color name="tvos_dock_stroke">#33FFFFFF</color>
-              <color name="tvos_pill_bg">#1FFFFFFF</color>
+              <color name="tvos_text_secondary">#9DA4B0</color>
+              <color name="tvos_dock_glass">#1CFFFFFF</color>
+              <color name="tvos_dock_stroke">#38FFFFFF</color>
+              <color name="tvos_pill_bg">#22FFFFFF</color>
           </resources>
           EOF
 
@@ -186,7 +186,7 @@ jobs:
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
               <corners android:radius="50dp" />
               <solid android:color="@color/tvos_pill_bg" />
-              <stroke android:width="1dp" android:color="#36FFFFFF" />
+              <stroke android:width="1dp" android:color="#3FFFFFFF" />
           </shape>
           EOF
 
@@ -203,7 +203,7 @@ jobs:
           </vector>
           EOF
 
-          # layout/activity_main.xml (Точная компоновка VibeTV из ролика + стеклянный Док Apple TV)
+          # layout/activity_main.xml
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -215,20 +215,19 @@ jobs:
               android:clipChildren="false"
               android:clipToPadding="false">
 
-              <!-- Плавное атмосферное свечение на весь экран в цвет активной карточки -->
+              <!-- Живой фоновый градиент с атмосферным свечением в стиле Apple TV -->
               <View
                   android:id="@+id/ambientGlowView"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent" />
 
-              <!-- Верхняя шапка: слева приветствие, часы и дата; справа капсулы Источники, VPN, AirPlay, Настройки -->
               <LinearLayout
                   android:id="@+id/topHeader"
                   android:layout_width="0dp"
                   android:layout_height="wrap_content"
                   android:layout_marginStart="54dp"
                   android:layout_marginEnd="54dp"
-                  android:layout_marginTop="34dp"
+                  android:layout_marginTop="32dp"
                   android:gravity="center_vertical"
                   android:orientation="horizontal"
                   android:clipChildren="false"
@@ -236,7 +235,6 @@ jobs:
                   app:layout_constraintStart_toStartOf="parent"
                   app:layout_constraintEnd_toEndOf="parent">
 
-                  <!-- Левый блок: Приветствие + Крупные часы + День недели и дата -->
                   <LinearLayout
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
@@ -247,7 +245,7 @@ jobs:
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
                           android:text=" TV  •  ДОБРЫЙ ВЕЧЕР"
-                          android:textColor="#A8FFFFFF"
+                          android:textColor="#B0FFFFFF"
                           android:textSize="11sp"
                           android:textStyle="bold"
                           android:letterSpacing="0.14" />
@@ -266,7 +264,7 @@ jobs:
                               android:format24Hour="HH:mm"
                               android:format12Hour="HH:mm"
                               android:textColor="@color/tvos_text_primary"
-                              android:textSize="42sp"
+                              android:textSize="40sp"
                               android:fontFamily="sans-serif-light" />
 
                           <TextView
@@ -276,7 +274,7 @@ jobs:
                               android:layout_marginStart="16dp"
                               android:lineSpacingExtra="2dp"
                               android:text="ВОСКРЕСЕНЬЕ\n25 ОКТЯБРЯ"
-                              android:textColor="#CCFFFFFF"
+                              android:textColor="#D0FFFFFF"
                               android:textSize="11sp"
                               android:textStyle="bold"
                               android:letterSpacing="0.06" />
@@ -288,7 +286,6 @@ jobs:
                       android:layout_height="1dp"
                       android:layout_weight="1" />
 
-                  <!-- Правый блок кнопок как в видео: Источники, VPN (Happ), AirPlay (AirScreen), Скрытые, Настройки -->
                   <LinearLayout
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
@@ -371,14 +368,13 @@ jobs:
                   </LinearLayout>
               </LinearLayout>
 
-              <!-- Крупное название выбранного приложения прямо над карточками (как в видео) -->
               <LinearLayout
                   android:id="@+id/focusedTitleBlock"
                   android:layout_width="0dp"
                   android:layout_height="wrap_content"
                   android:layout_marginStart="56dp"
                   android:layout_marginEnd="56dp"
-                  android:layout_marginTop="42dp"
+                  android:layout_marginTop="36dp"
                   android:orientation="vertical"
                   app:layout_constraintTop_toBottomOf="@id/topHeader"
                   app:layout_constraintStart_toStartOf="parent"
@@ -388,34 +384,33 @@ jobs:
                       android:id="@+id/tvFocusedAppTitle"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
-                      android:text="YouTube"
+                      android:text="Apple TV"
                       android:textColor="@color/tvos_text_primary"
-                      android:textSize="36sp"
+                      android:textSize="34sp"
                       android:textStyle="bold"
                       android:letterSpacing="-0.01"
-                      android:shadowColor="#99000000"
+                      android:shadowColor="#AA000000"
                       android:shadowDx="0"
                       android:shadowDy="4"
-                      android:shadowRadius="12" />
+                      android:shadowRadius="14" />
 
                   <TextView
                       android:id="@+id/tvFocusedAppHint"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:layout_marginTop="2dp"
-                      android:text="Apple TV Dock  •  Удерживайте ОК для настройки карточки"
-                      android:textColor="#99FFFFFF"
+                      android:text="Apple TV Dock  •  ОК — открыть  •  Удерживайте ОК — настроить"
+                      android:textColor="#A0FFFFFF"
                       android:textSize="12sp" />
               </LinearLayout>
 
-              <!-- Стеклянный Док Apple TV (верхний ряд из 6 главных карточек 16:9) -->
               <LinearLayout
                   android:id="@+id/dockGlassBar"
                   android:layout_width="0dp"
-                  android:layout_height="112dp"
+                  android:layout_height="110dp"
                   android:layout_marginStart="46dp"
                   android:layout_marginEnd="46dp"
-                  android:layout_marginTop="14dp"
+                  android:layout_marginTop="12dp"
                   android:background="@drawable/bg_dock_glass"
                   android:paddingStart="12dp"
                   android:paddingEnd="12dp"
@@ -434,7 +429,6 @@ jobs:
                       android:clipToPadding="false" />
               </LinearLayout>
 
-              <!-- Нижняя сетка остальных приложений (6 колонок 16:9 без мусорных подписей) -->
               <androidx.recyclerview.widget.RecyclerView
                   android:id="@+id/appsGrid"
                   android:layout_width="0dp"
@@ -442,7 +436,7 @@ jobs:
                   android:layout_marginTop="10dp"
                   android:paddingStart="58dp"
                   android:paddingEnd="58dp"
-                  android:paddingTop="8dp"
+                  android:paddingTop="6dp"
                   android:paddingBottom="24dp"
                   android:clipChildren="false"
                   android:clipToPadding="false"
@@ -454,7 +448,7 @@ jobs:
           </androidx.constraintlayout.widget.ConstraintLayout>
           EOF
 
-          # layout/item_app_tile.xml (Чистая широкоформатная карточка 16:9 без текста снизу, как в видео)
+          # layout/item_app_tile.xml
           cat << 'EOF' > app/src/main/res/layout/item_app_tile.xml
           <?xml version="1.0" encoding="utf-8"?>
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -466,8 +460,8 @@ jobs:
 
               <FrameLayout
                   android:id="@+id/appCardView"
-                  android:layout_width="138dp"
-                  android:layout_height="78dp"
+                  android:layout_width="142dp"
+                  android:layout_height="80dp"
                   android:layout_gravity="center"
                   android:clickable="true"
                   android:focusable="true">
@@ -486,7 +480,7 @@ jobs:
           </FrameLayout>
           EOF
 
-          # AppAdapter.kt (Генератор фирменных 16:9 обложек Apple TV / VibeTV + 3D параллакс-фокус)
+          # AppAdapter.kt
           cat << 'EOF' > app/src/main/java/com/appletv/launcher/AppAdapter.kt
           package com.appletv.launcher
 
@@ -514,6 +508,7 @@ jobs:
           data class AppEntry(
               val label: String,
               val packageName: String,
+              val activityName: String,
               val icon: Drawable,
               val banner: Drawable?,
               val brandColor: Int,
@@ -570,7 +565,7 @@ jobs:
 
                   holder.card.setOnFocusChangeListener { v, hasFocus ->
                       val scale = if (hasFocus) 1.15f else 1.0f
-                      val elevation = if (hasFocus) 26f else 2f
+                      val elevation = if (hasFocus) 28f else 2f
                       v.animate()
                           .scaleX(scale)
                           .scaleY(scale)
@@ -624,7 +619,9 @@ jobs:
                       key.contains("rutube") -> BrandStyle(Color.parseColor("#8A2BE2"), Color.parseColor("#005BFF"), "RUTUBE")
                       key.contains("vk") || key.contains("вк") -> BrandStyle(Color.parseColor("#0077FF"), Color.parseColor("#0044AA"), "VK Видео")
                       key.contains("happ") -> BrandStyle(Color.parseColor("#1E222D"), Color.parseColor("#0D1017"), "Happ")
-                      key.contains("airscreen") || key.contains("airplay") -> BrandStyle(Color.parseColor("#00B4DB"), Color.parseColor("#0083B0"), "AirPlay")
+                      key.contains("airscreen") -> BrandStyle(Color.parseColor("#00B4DB"), Color.parseColor("#0083B0"), "AirScreen")
+                      key.contains("mhshare") -> BrandStyle(Color.parseColor("#0A84FF"), Color.parseColor("#0055B3"), "MHshare")
+                      key.contains("acbridge") -> BrandStyle(Color.parseColor("#30B0C7"), Color.parseColor("#1D6F8A"), "ACBridge")
                       key.contains("24тв") || key.contains("24tv") -> BrandStyle(Color.parseColor("#1E3C72"), Color.parseColor("#2A5298"), "24ТВ")
                       key.contains("vlc") -> BrandStyle(Color.parseColor("#FF8008"), Color.parseColor("#CC5500"), "VLC")
                       else -> {
@@ -637,7 +634,6 @@ jobs:
                   }
               }
 
-              // Рисует широкоформатную карточку 16:9 (320x180) со скругленной иконкой и брендингом как в ролике
               fun createCardBitmap(label: String, pkg: String, icon: Drawable, fallbackColor: Int): Pair<Bitmap, Int> {
                   val width = 320
                   val height = 180
@@ -646,7 +642,6 @@ jobs:
 
                   val style = resolveBrandStyle(label, pkg, fallbackColor)
 
-                  // 1. Градиентная подложка 16:9
                   val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                       shader = LinearGradient(
                           0f, 0f, width.toFloat(), height.toFloat(),
@@ -655,18 +650,16 @@ jobs:
                   }
                   canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
 
-                  // 2. Мягкий стеклянный блик Apple TV сверху
                   val sheenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                       shader = LinearGradient(
                           0f, 0f, 0f, height * 0.55f,
-                          Color.argb(42, 255, 255, 255),
+                          Color.argb(45, 255, 255, 255),
                           Color.argb(0, 255, 255, 255),
                           Shader.TileMode.CLAMP
                       )
                   }
                   canvas.drawRect(0f, 0f, width.toFloat(), height * 0.55f, sheenPaint)
 
-                  // 3. Рисуем иконку приложения, обрезанную в гладкий Apple Squircle (без острых углов!)
                   val iconSize = 68
                   val iconBmp = Bitmap.createBitmap(iconSize, iconSize, Bitmap.Config.ARGB_8888)
                   val iconCanvas = Canvas(iconBmp)
@@ -698,7 +691,6 @@ jobs:
                   val rect = RectF(startX, iconTop, startX + iconSize, iconTop + iconSize)
                   canvas.drawRoundRect(rect, 18f, 18f, squirclePaint)
 
-                  // 4. Крупное название сервиса рядом с иконкой прямо внутри 16:9 плитки (как в VibeTV из видео)
                   val fontMetrics = textPaint.fontMetrics
                   val textY = height / 2f - (fontMetrics.ascent + fontMetrics.descent) / 2f
                   canvas.drawText(displayLabel, startX + iconSize + gap, textY, textPaint)
@@ -710,12 +702,13 @@ jobs:
           }
           EOF
 
-          # MainActivity.kt (Логика часов, даты, HDMI-источников, VPN Happ, AirPlay и плавной подсветки)
+          # MainActivity.kt
           cat << 'EOF' > app/src/main/java/com/appletv/launcher/MainActivity.kt
           package com.appletv.launcher
 
           import android.animation.ArgbEvaluator
           import android.animation.ValueAnimator
+          import android.content.ComponentName
           import android.content.Context
           import android.content.Intent
           import android.content.pm.ApplicationInfo
@@ -739,11 +732,10 @@ jobs:
           class MainActivity : AppCompatActivity() {
 
               private val vpnKeywords = listOf("happ", "v2ray", "outline", "wireguard", "vpn", "nekobox", "singbox", "clash", "vless")
-              private val airPlayKeywords = listOf("airscreen", "airplay", "airpin", "cast", "miracast")
-              private val defaultHiddenKeywords = listOf("acbridge", "mhshare")
+              private val airPlayKeywords = listOf("airscreen", "mhshare", "acbridge", "airplay", "airpin", "miracast", "cast", "wfd")
 
               private lateinit var allApps: MutableList<AppEntry>
-              private var currentAmbientColor: Int = Color.parseColor("#182238")
+              private var currentAmbientColor: Int = Color.parseColor("#1B2438")
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
@@ -752,12 +744,27 @@ jobs:
                   updateGreetingAndDate()
                   setupTopButtons()
                   refreshLauncherGrid()
+                  wakeUpAirPlayServicesSilently()
               }
 
               override fun onResume() {
                   super.onResume()
                   updateGreetingAndDate()
                   refreshLauncherGrid()
+              }
+
+              private fun wakeUpAirPlayServicesSilently() {
+                  try {
+                      val airApps = allApps.filter { app ->
+                          val k = "${app.label.lowercase()} ${app.packageName.lowercase()}"
+                          k.contains("acbridge") || k.contains("mhshare")
+                      }
+                      for (app in airApps) {
+                          try {
+                              startService(Intent().setPackage(app.packageName))
+                          } catch (_: Exception) {}
+                      }
+                  } catch (_: Exception) {}
               }
 
               private fun updateGreetingAndDate() {
@@ -806,26 +813,20 @@ jobs:
                       it.alpha = 0.82f
                   }
 
-                  // Кнопка "Источники" с выпадающим меню HDMI 1 / HDMI 2 / HDMI 3 / AV как в видео
                   btnSources.setOnClickListener {
                       val sources = arrayOf("HDMI 1", "HDMI 2", "HDMI 3", "AV / Композитный", "Все ТВ-входы системы")
                       AlertDialog.Builder(this)
                           .setTitle("Выберите источник сигнала")
-                          .setItems(sources) { _, _ ->
-                              openTvInputSource()
-                          }
+                          .setItems(sources) { _, _ -> openTvInputSource() }
                           .show()
                   }
 
-                  // Кнопка VPN — мгновенно открывает ваш Happ или другой VPN
                   btnVpn.setOnClickListener {
                       val vpnApp = allApps.firstOrNull { app ->
-                          vpnKeywords.any { kw ->
-                              app.label.lowercase().contains(kw) || app.packageName.lowercase().contains(kw)
-                          }
+                          vpnKeywords.any { kw -> app.label.lowercase().contains(kw) || app.packageName.lowercase().contains(kw) }
                       }
                       if (vpnApp != null) {
-                          launchPackage(vpnApp.packageName)
+                          launchAppEntry(vpnApp)
                       } else {
                           try {
                               startActivity(Intent("android.net.vpn.SETTINGS"))
@@ -835,18 +836,8 @@ jobs:
                       }
                   }
 
-                  // Кнопка AirPlay — мгновенно открывает AirScreen
                   btnAirPlay.setOnClickListener {
-                      val airApp = allApps.firstOrNull { app ->
-                          airPlayKeywords.any { kw ->
-                              app.label.lowercase().contains(kw) || app.packageName.lowercase().contains(kw)
-                          }
-                      }
-                      if (airApp != null) {
-                          launchPackage(airApp.packageName)
-                      } else {
-                          Toast.makeText(this, "Установите или откройте AirScreen", Toast.LENGTH_SHORT).show()
-                      }
+                      showAirPlayCenterDialog()
                   }
 
                   btnHidden.setOnClickListener {
@@ -856,6 +847,35 @@ jobs:
                   btnSettings.setOnClickListener {
                       startActivity(Intent(Settings.ACTION_SETTINGS))
                   }
+              }
+
+              private fun showAirPlayCenterDialog() {
+                  val receivers = allApps.filter { app ->
+                      val key = "${app.label.lowercase()} ${app.packageName.lowercase()}"
+                      airPlayKeywords.any { kw -> key.contains(kw) }
+                  }
+
+                  val menuItems = mutableListOf<String>()
+                  val actions = mutableListOf<() -> Unit>()
+
+                  for (app in receivers) {
+                      menuItems.add("Запустить ${app.label}")
+                      actions.add { launchAppEntry(app) }
+                  }
+
+                  menuItems.add("Системные настройки трансляции (Cast)")
+                  actions.add {
+                      try {
+                          startActivity(Intent(Settings.ACTION_CAST_SETTINGS))
+                      } catch (e: Exception) {
+                          startActivity(Intent(Settings.ACTION_SETTINGS))
+                      }
+                  }
+
+                  AlertDialog.Builder(this)
+                      .setTitle("📡 Центр AirPlay")
+                      .setItems(menuItems.toTypedArray()) { _, which -> actions[which].invoke() }
+                      .show()
               }
 
               private fun openTvInputSource() {
@@ -873,7 +893,7 @@ jobs:
               }
 
               private fun refreshLauncherGrid() {
-                  val prefs = getSharedPreferences("tvos_v3_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v32_prefs", Context.MODE_PRIVATE)
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
                   val dockSet = prefs.getStringSet("dock_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
@@ -882,30 +902,17 @@ jobs:
                   val seen = HashSet<String>()
                   seen.add(packageName)
 
-                  val leanbackIntent = Intent(Intent.ACTION_MAIN, null).apply {
-                      addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
-                  }
-                  val normalIntent = Intent(Intent.ACTION_MAIN, null).apply {
-                      addCategory(Intent.CATEGORY_LAUNCHER)
-                  }
+                  val leanbackIntent = Intent(Intent.ACTION_MAIN, null).apply { addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER) }
+                  val normalIntent = Intent(Intent.ACTION_MAIN, null).apply { addCategory(Intent.CATEGORY_LAUNCHER) }
 
                   val activities = pm.queryIntentActivities(leanbackIntent, 0) + pm.queryIntentActivities(normalIntent, 0)
 
                   for (info in activities) {
                       val pkg = info.activityInfo.packageName
+                      val actName = info.activityInfo.name
                       if (!seen.contains(pkg)) {
                           seen.add(pkg)
                           val label = info.loadLabel(pm).toString()
-
-                          // Автоскрытие мусорных ACBridge и MHshare при первом запуске
-                          if (!prefs.getBoolean("cleaned_$pkg", false)) {
-                              if (defaultHiddenKeywords.any { label.lowercase().contains(it) }) {
-                                  hiddenSet.add(pkg)
-                                  prefs.edit().putStringSet("hidden_pkgs", hiddenSet).apply()
-                              }
-                              prefs.edit().putBoolean("cleaned_$pkg", true).apply()
-                          }
-
                           val icon = info.loadIcon(pm)
                           val banner = info.activityInfo.loadBanner(pm) ?: info.activityInfo.applicationInfo.loadBanner(pm)
                           val isSys = (info.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
@@ -916,6 +923,7 @@ jobs:
                               AppEntry(
                                   label = label,
                                   packageName = pkg,
+                                  activityName = actName,
                                   icon = icon,
                                   banner = banner,
                                   brandColor = brandColor,
@@ -926,20 +934,21 @@ jobs:
                       }
                   }
 
-                  // Сначала ваши установленные программы, системные — в конце
                   allApps.sortWith(compareBy<AppEntry> { it.isSystem }.thenBy { it.label.lowercase() })
 
                   val visibleApps = allApps.filter { !hiddenSet.contains(it.packageName) }
 
-                  // В верхнем стеклянном Доке — 6 главных карточек (как в ролике)
+                  // Адаптивное число колонок (до 6 на широкий экран)
+                  val spanCount = if (visibleApps.size >= 6) 6 else if (visibleApps.size in 4..5) visibleApps.size else 4
+
                   val dockApps = mutableListOf<AppEntry>()
                   for (app in visibleApps) {
-                      if (dockSet.contains(app.packageName) && dockApps.size < 6) {
+                      if (dockSet.contains(app.packageName) && dockApps.size < spanCount) {
                           dockApps.add(app)
                       }
                   }
                   for (app in visibleApps) {
-                      if (!dockApps.contains(app) && dockApps.size < 6) {
+                      if (!dockApps.contains(app) && dockApps.size < spanCount) {
                           dockApps.add(app)
                       }
                   }
@@ -949,14 +958,14 @@ jobs:
                   val dockRv = findViewById<RecyclerView>(R.id.dockRecycler)
                   val gridRv = findViewById<RecyclerView>(R.id.appsGrid)
 
-                  dockRv.layoutManager = GridLayoutManager(this, 6)
-                  gridRv.layoutManager = GridLayoutManager(this, 6)
+                  dockRv.layoutManager = GridLayoutManager(this, spanCount)
+                  gridRv.layoutManager = GridLayoutManager(this, spanCount)
 
                   dockRv.adapter = AppAdapter(
                       this,
                       dockApps,
                       onFocused = { updateFocusedAppStage(it, true) },
-                      onLaunch = { launchPackage(it.packageName) },
+                      onLaunch = { launchAppEntry(it) },
                       onLongClick = { showAppOptionsDialog(it) }
                   )
 
@@ -964,7 +973,7 @@ jobs:
                       this,
                       gridApps,
                       onFocused = { updateFocusedAppStage(it, false) },
-                      onLaunch = { launchPackage(it.packageName) },
+                      onLaunch = { launchAppEntry(it) },
                       onLongClick = { showAppOptionsDialog(it) }
                   )
 
@@ -982,24 +991,24 @@ jobs:
                   val zone = if (isInDock) "Apple TV Dock" else "Все приложения"
                   hintView.text = "$zone  •  ОК — открыть  •  Удерживайте ОК — настроить"
 
-                  // Плавный переход атмосферного свечения фона в цвет приложения
+                  // Живые обои tvOS: плавная смена фонового цвета под брендом выбранного приложения
                   val targetColor = Color.argb(
-                      135,
+                      155,
                       Color.red(app.brandColor),
                       Color.green(app.brandColor),
                       Color.blue(app.brandColor)
                   )
 
                   val animator = ValueAnimator.ofObject(ArgbEvaluator(), currentAmbientColor, targetColor)
-                  animator.duration = 280
+                  animator.duration = 320
                   animator.addUpdateListener { va ->
                       val animatedColor = va.animatedValue as Int
                       val bg = GradientDrawable(
                           GradientDrawable.Orientation.TL_BR,
                           intArrayOf(
                               animatedColor,
-                              Color.parseColor("#0D101A"),
-                              Color.parseColor("#06070B")
+                              Color.parseColor("#0C101C"),
+                              Color.parseColor("#050608")
                           )
                       )
                       ambientView.background = bg
@@ -1009,25 +1018,20 @@ jobs:
               }
 
               private fun showAppOptionsDialog(app: AppEntry) {
-                  val prefs = getSharedPreferences("tvos_v3_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v32_prefs", Context.MODE_PRIVATE)
                   val dockSet = prefs.getStringSet("dock_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
                   val isInDock = dockSet.contains(app.packageName)
-                  val dockOption = if (isInDock) "Убрать из верхнего Дока" else "Закрепить в верхнем Доке (топ-6)"
+                  val dockOption = if (isInDock) "Убрать из верхнего Дока" else "Закрепить в верхнем Доке"
 
-                  val options = arrayOf(
-                      "Запустить ${app.label}",
-                      dockOption,
-                      "Скрыть карточку с экрана",
-                      "Системные свойства приложения"
-                  )
+                  val options = arrayOf("Запустить ${app.label}", dockOption, "Скрыть карточку с экрана", "Свойства")
 
                   AlertDialog.Builder(this)
                       .setTitle(app.label)
                       .setItems(options) { _, which ->
                           when (which) {
-                              0 -> launchPackage(app.packageName)
+                              0 -> launchAppEntry(app)
                               1 -> {
                                   if (isInDock) dockSet.remove(app.packageName) else dockSet.add(app.packageName)
                                   prefs.edit().putStringSet("dock_pkgs", dockSet).apply()
@@ -1037,13 +1041,11 @@ jobs:
                                   hiddenSet.add(app.packageName)
                                   prefs.edit().putStringSet("hidden_pkgs", hiddenSet).apply()
                                   refreshLauncherGrid()
-                                  Toast.makeText(this, "${app.label} скрыто", Toast.LENGTH_SHORT).show()
                               }
                               3 -> {
-                                  val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                  startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                                       data = android.net.Uri.parse("package:${app.packageName}")
-                                  }
-                                  startActivity(intent)
+                                  })
                               }
                           }
                       }
@@ -1051,7 +1053,7 @@ jobs:
               }
 
               private fun showRestoreHiddenDialog() {
-                  val prefs = getSharedPreferences("tvos_v3_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v32_prefs", Context.MODE_PRIVATE)
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
                   if (hiddenSet.isEmpty()) {
@@ -1063,10 +1065,9 @@ jobs:
                   val names = hiddenApps.map { it.label }.toTypedArray()
 
                   AlertDialog.Builder(this)
-                      .setTitle("Скрытые приложения (нажмите, чтобы вернуть):")
+                      .setTitle("Скрытые приложения:")
                       .setItems(names) { _, which ->
-                          val target = hiddenApps[which]
-                          hiddenSet.remove(target.packageName)
+                          hiddenSet.remove(hiddenApps[which].packageName)
                           prefs.edit().putStringSet("hidden_pkgs", hiddenSet).apply()
                           refreshLauncherGrid()
                       }
@@ -1077,10 +1078,20 @@ jobs:
                       .show()
               }
 
-              private fun launchPackage(pkg: String) {
-                  val intent = packageManager.getLaunchIntentForPackage(pkg)
-                  if (intent != null) {
-                      startActivity(intent)
+              private fun launchAppEntry(app: AppEntry) {
+                  try {
+                      startActivity(Intent(Intent.ACTION_MAIN).apply {
+                          component = ComponentName(app.packageName, app.activityName)
+                          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                      })
+                      return
+                  } catch (_: Exception) {}
+
+                  try {
+                      val intent = packageManager.getLeanbackLaunchIntentForPackage(app.packageName) ?: packageManager.getLaunchIntentForPackage(app.packageName)
+                      if (intent != null) startActivity(intent)
+                  } catch (e: Exception) {
+                      Toast.makeText(this, "Не удалось запустить", Toast.LENGTH_SHORT).show()
                   }
               }
 
@@ -1090,35 +1101,18 @@ jobs:
                       val canvas = Canvas(bmp)
                       drawable.setBounds(0, 0, 40, 40)
                       drawable.draw(canvas)
-
-                      var rSum = 0L
-                      var gSum = 0L
-                      var bSum = 0L
-                      var count = 0
-
+                      var rSum = 0L; var gSum = 0L; var bSum = 0L; var count = 0
                       for (x in 4 until 36 step 4) {
                           for (y in 4 until 36 step 4) {
-                              val pixel = bmp.getPixel(x, y)
-                              if (Color.alpha(pixel) > 180) {
-                                  val r = Color.red(pixel)
-                                  val g = Color.green(pixel)
-                                  val b = Color.blue(pixel)
-                                  if ((r + g + b) in 45..700) {
-                                      rSum += r
-                                      gSum += g
-                                      bSum += b
-                                      count++
-                                  }
+                              val p = bmp.getPixel(x, y)
+                              if (Color.alpha(p) > 180) {
+                                  rSum += Color.red(p); gSum += Color.green(p); bSum += Color.blue(p); count++
                               }
                           }
                       }
                       bmp.recycle()
-
-                      if (count > 0) {
-                          Color.rgb((rSum / count).toInt(), (gSum / count).toInt(), (bSum / count).toInt())
-                      } else {
-                          Color.parseColor("#2B3548")
-                      }
+                      if (count > 0) Color.rgb((rSum / count).toInt(), (gSum / count).toInt(), (bSum / count).toInt())
+                      else Color.parseColor("#2B3548")
                   } catch (e: Exception) {
                       Color.parseColor("#2B3548")
                   }
@@ -1132,5 +1126,5 @@ jobs:
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppleTV-Vibe-Launcher-v3
+          name: AppleTV-Vibe-Launcher-v3.2
           path: app/build/outputs/apk/debug/app-debug.apk
