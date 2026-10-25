@@ -1,4 +1,4 @@
-name: Build Apple tvOS VibeTV Launcher v6.0
+name: Build Apple tvOS VibeTV Launcher v7.0
 
 on:
   push:
@@ -79,8 +79,8 @@ jobs:
                   applicationId "com.appletv.launcher"
                   minSdk 24
                   targetSdk 33
-                  versionCode 30
-                  versionName "6.0.0-VibeTV"
+                  versionCode 35
+                  versionName "7.0.0-PhotoEdition"
               }
               buildTypes {
                   release { minifyEnabled false }
@@ -106,6 +106,8 @@ jobs:
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
               <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
               <uses-feature android:name="android.software.leanback" android:required="false" />
               <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
@@ -117,6 +119,7 @@ jobs:
                   android:label="Apple TV"
                   android:usesCleartextTraffic="true"
                   android:hardwareAccelerated="true"
+                  android:requestLegacyExternalStorage="true"
                   android:theme="@style/Theme.AppleTv">
                   <activity
                       android:name=".MainActivity"
@@ -143,8 +146,8 @@ jobs:
           <resources>
               <color name="tvos_bg_dark">#060B19</color>
               <color name="tvos_text_primary">#FFFFFF</color>
-              <color name="tvos_dock_glass">#22FFFFFF</color>
-              <color name="tvos_dock_stroke">#38FFFFFF</color>
+              <color name="tvos_dock_glass">#28FFFFFF</color>
+              <color name="tvos_dock_stroke">#45FFFFFF</color>
               <color name="tvos_pill_bg">#28FFFFFF</color>
           </resources>
           EOF
@@ -163,25 +166,64 @@ jobs:
           cat << 'EOF' > app/src/main/res/drawable/bg_dock_glass.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="26dp" />
+              <corners android:radius="28dp" />
               <solid android:color="@color/tvos_dock_glass" />
-              <stroke android:width="1dp" android:color="@color/tvos_dock_stroke" />
+              <stroke android:width="1.2dp" android:color="@color/tvos_dock_stroke" />
           </shape>
           EOF
 
-          cat << 'EOF' > app/src/main/res/drawable/bg_top_pill.xml
+          # Капсула для кнопки "Источники" с поддержкой подсветки при наведении пульта
+          cat << 'EOF' > app/src/main/res/drawable/bg_top_pill_selector.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="50dp" />
-              <solid android:color="@color/tvos_pill_bg" />
-              <stroke android:width="1dp" android:color="#40FFFFFF" />
+          <selector xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:state_focused="true">
+                  <shape android:shape="rectangle">
+                      <corners android:radius="100dp" />
+                      <solid android:color="#55FFFFFF" />
+                      <stroke android:width="2dp" android:color="#FFFFFFFF" />
+                  </shape>
+              </item>
+              <item>
+                  <shape android:shape="rectangle">
+                      <corners android:radius="100dp" />
+                      <solid android:color="#28FFFFFF" />
+                      <stroke android:width="1dp" android:color="#40FFFFFF" />
+                  </shape>
+              </item>
+          </selector>
+          EOF
+
+          # Идеально круглая форма (oval) для кнопок Wi-Fi и Настроек, чтобы никогда не становились квадратными
+          cat << 'EOF' > app/src/main/res/drawable/bg_circle_selector.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <selector xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:state_focused="true">
+                  <shape android:shape="oval">
+                      <solid android:color="#55FFFFFF" />
+                      <stroke android:width="2dp" android:color="#FFFFFFFF" />
+                  </shape>
+              </item>
+              <item>
+                  <shape android:shape="oval">
+                      <solid android:color="#28FFFFFF" />
+                      <stroke android:width="1dp" android:color="#40FFFFFF" />
+                  </shape>
+              </item>
+          </selector>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_vpn_dot.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+              <solid android:color="#30D158" />
+              <stroke android:width="1.5dp" android:color="#FFFFFF" />
           </shape>
           EOF
 
           cat << 'EOF' > app/src/main/res/drawable/bg_card_rounded.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="16dp" />
+              <corners android:radius="18dp" />
               <solid android:color="#1C1C1E" />
           </shape>
           EOF
@@ -189,9 +231,9 @@ jobs:
           cat << 'EOF' > app/src/main/res/drawable/bg_focus_border.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="16dp" />
+              <corners android:radius="18dp" />
               <solid android:color="#00000000" />
-              <stroke android:width="3dp" android:color="#FFFFFF" />
+              <stroke android:width="3.5dp" android:color="#FFFFFF" />
           </shape>
           EOF
 
@@ -224,34 +266,37 @@ jobs:
               android:clipToPadding="false"
               android:background="@color/tvos_bg_dark">
 
-              <!-- Видео-обои Apple Aerial (включаются по желанию в настройках) -->
-              <VideoView
-                  android:id="@+id/aerialVideoView"
+              <!-- Фоновая картинка для пользовательских фото-обоев (никаких тормозящих VideoView!) -->
+              <ImageView
+                  android:id="@+id/customWallpaperImage"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent"
+                  android:scaleType="centerCrop"
                   android:visibility="gone" />
 
-              <!-- Атмосферное свечение фона как на видео VibeTV -->
+              <!-- Легкое атмосферное затемнение/градиент -->
               <View
                   android:id="@+id/ambientGlowView"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent" />
 
-              <!-- ВЕРХНЯЯ ПАНЕЛЬ ТОЧЬ-В-ТОЧЬ КАК В ВИДЕО НА 00:47 -->
+              <!-- ВЕРХНЯЯ ПАНЕЛЬ С ОТКЛЮЧЕННЫМ ОБРЕЗАНИЕМ (clipChildren="false"), ЧТОБЫ КРУГЛЫЕ КНОПКИ НЕ СТАНОВИЛИСЬ КВАДРАТНЫМИ -->
               <LinearLayout
                   android:id="@+id/topHeader"
                   android:layout_width="0dp"
                   android:layout_height="wrap_content"
                   android:layout_marginStart="64dp"
                   android:layout_marginEnd="64dp"
-                  android:layout_marginTop="40dp"
+                  android:layout_marginTop="36dp"
+                  android:padding="12dp"
+                  android:clipChildren="false"
+                  android:clipToPadding="false"
                   android:gravity="center_vertical"
                   android:orientation="horizontal"
                   app:layout_constraintTop_toTopOf="parent"
                   app:layout_constraintStart_toStartOf="parent"
                   app:layout_constraintEnd_toEndOf="parent">
 
-                  <!-- Левый блок: ДОБРЫЙ ВЕЧЕР, крупные часы 19:15 и двустрочная дата справа от часов -->
                   <LinearLayout
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
@@ -262,8 +307,12 @@ jobs:
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
                           android:text="ДОБРЫЙ ВЕЧЕР"
-                          android:textColor="#99FFFFFF"
+                          android:textColor="#B3FFFFFF"
                           android:textSize="11sp"
+                          android:shadowColor="#80000000"
+                          android:shadowDx="0"
+                          android:shadowDy="1"
+                          android:shadowRadius="4"
                           android:letterSpacing="0.08"
                           android:textStyle="bold" />
 
@@ -281,6 +330,10 @@ jobs:
                               android:format12Hour="HH:mm"
                               android:textColor="@color/tvos_text_primary"
                               android:textSize="44sp"
+                              android:shadowColor="#99000000"
+                              android:shadowDx="0"
+                              android:shadowDy="2"
+                              android:shadowRadius="6"
                               android:fontFamily="sans-serif-light" />
 
                           <TextView
@@ -289,9 +342,13 @@ jobs:
                               android:layout_height="wrap_content"
                               android:layout_marginStart="14dp"
                               android:lineSpacingExtra="2dp"
-                              android:text="ЧЕТВЕРГ\n22 ОКТЯБРЯ"
-                              android:textColor="#B3FFFFFF"
+                              android:text="ВОСКРЕСЕНЬЕ\n25 ОКТЯБРЯ"
+                              android:textColor="#D9FFFFFF"
                               android:textSize="11sp"
+                              android:shadowColor="#80000000"
+                              android:shadowDx="0"
+                              android:shadowDy="1"
+                              android:shadowRadius="4"
                               android:letterSpacing="0.04"
                               android:textStyle="bold" />
 
@@ -301,8 +358,12 @@ jobs:
                               android:layout_height="wrap_content"
                               android:layout_marginStart="18dp"
                               android:text="⛅ +18°C"
-                              android:textColor="#CCFFFFFF"
+                              android:textColor="#EEFFFFFF"
                               android:textSize="14sp"
+                              android:shadowColor="#80000000"
+                              android:shadowDx="0"
+                              android:shadowDy="1"
+                              android:shadowRadius="4"
                               android:fontFamily="sans-serif-medium" />
                       </LinearLayout>
                   </LinearLayout>
@@ -312,24 +373,27 @@ jobs:
                       android:layout_height="1dp"
                       android:layout_weight="1" />
 
-                  <!-- Правый блок: только капсула Источники, кружок Wi-Fi и кружок Настройки (как на 00:52) -->
+                  <!-- Правый блок с круглыми кнопками -->
                   <LinearLayout
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
+                      android:padding="10dp"
+                      android:clipChildren="false"
+                      android:clipToPadding="false"
                       android:gravity="center_vertical"
                       android:orientation="horizontal">
 
                       <TextView
                           android:id="@+id/btnSources"
                           android:layout_width="wrap_content"
-                          android:layout_height="42dp"
-                          android:layout_marginEnd="10dp"
-                          android:background="@drawable/bg_top_pill"
+                          android:layout_height="44dp"
+                          android:layout_marginEnd="14dp"
+                          android:background="@drawable/bg_top_pill_selector"
                           android:clickable="true"
                           android:focusable="true"
                           android:gravity="center"
-                          android:paddingStart="18dp"
-                          android:paddingEnd="18dp"
+                          android:paddingStart="20dp"
+                          android:paddingEnd="20dp"
                           android:text="📺  Источники"
                           android:textColor="#FFFFFF"
                           android:textSize="13sp"
@@ -337,10 +401,10 @@ jobs:
 
                       <FrameLayout
                           android:id="@+id/btnWifiStatus"
-                          android:layout_width="42dp"
-                          android:layout_height="42dp"
-                          android:layout_marginEnd="10dp"
-                          android:background="@drawable/bg_top_pill"
+                          android:layout_width="44dp"
+                          android:layout_height="44dp"
+                          android:layout_marginEnd="14dp"
+                          android:background="@drawable/bg_circle_selector"
                           android:clickable="true"
                           android:focusable="true">
 
@@ -352,19 +416,19 @@ jobs:
 
                           <View
                               android:id="@+id/vpnActiveDot"
-                              android:layout_width="8dp"
-                              android:layout_height="8dp"
+                              android:layout_width="10dp"
+                              android:layout_height="10dp"
                               android:layout_gravity="top|end"
-                              android:layout_margin="7dp"
-                              android:background="#30D158"
+                              android:layout_margin="5dp"
+                              android:background="@drawable/bg_vpn_dot"
                               android:visibility="gone" />
                       </FrameLayout>
 
                       <TextView
                           android:id="@+id/btnSettings"
-                          android:layout_width="42dp"
-                          android:layout_height="42dp"
-                          android:background="@drawable/bg_top_pill"
+                          android:layout_width="44dp"
+                          android:layout_height="44dp"
+                          android:background="@drawable/bg_circle_selector"
                           android:clickable="true"
                           android:focusable="true"
                           android:gravity="center"
@@ -374,13 +438,15 @@ jobs:
                   </LinearLayout>
               </LinearLayout>
 
-              <!-- Крупное название выбранного приложения слева прямо над доком (как "Netflix" / "YouTube" на 00:47) -->
+              <!-- ОГРОМНОЕ СВОБОДНОЕ МЕСТО ПОСЕРЕДИНЕ ЭКРАНА! -->
+              <!-- Док и заголовок опущены в самый низ экрана -->
+
               <LinearLayout
                   android:id="@+id/focusedTitleBlock"
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
-                  android:layout_marginStart="68dp"
-                  android:layout_marginBottom="12dp"
+                  android:layout_marginStart="72dp"
+                  android:layout_marginBottom="14dp"
                   android:orientation="vertical"
                   app:layout_constraintBottom_toTopOf="@id/dockGlassBar"
                   app:layout_constraintStart_toStartOf="parent">
@@ -392,7 +458,7 @@ jobs:
                       android:text="YouTube"
                       android:textColor="#FFFFFF"
                       android:textSize="32sp"
-                      android:shadowColor="#AA000000"
+                      android:shadowColor="#CC000000"
                       android:shadowDx="0"
                       android:shadowDy="3"
                       android:shadowRadius="8"
@@ -403,26 +469,30 @@ jobs:
                       android:id="@+id/tvFocusedAppHint"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
-                      android:text="Удерживайте OK — скрыть или переместить"
-                      android:textColor="#80FFFFFF"
+                      android:text="Удерживайте OK — скрыть, переместить или привязать к кнопке пульта"
+                      android:textColor="#B3FFFFFF"
+                      android:shadowColor="#AA000000"
+                      android:shadowDx="0"
+                      android:shadowDy="1"
+                      android:shadowRadius="4"
                       android:textSize="11sp" />
               </LinearLayout>
 
-              <!-- Стеклянный Док (6 иконок) с большим воздушным отступом сверху (150dp) -->
+              <!-- Единый длинный стеклянный ряд внизу экрана (листается горизонтально, освобождая весь центр) -->
               <LinearLayout
                   android:id="@+id/dockGlassBar"
                   android:layout_width="0dp"
-                  android:layout_height="104dp"
+                  android:layout_height="118dp"
                   android:layout_marginStart="64dp"
                   android:layout_marginEnd="64dp"
-                  android:layout_marginTop="150dp"
+                  android:layout_marginBottom="46dp"
                   android:background="@drawable/bg_dock_glass"
-                  android:paddingStart="12dp"
-                  android:paddingEnd="12dp"
+                  android:paddingStart="18dp"
+                  android:paddingEnd="18dp"
                   android:clipChildren="false"
                   android:clipToPadding="false"
                   android:gravity="center_vertical"
-                  app:layout_constraintTop_toBottomOf="@id/topHeader"
+                  app:layout_constraintBottom_toBottomOf="parent"
                   app:layout_constraintStart_toStartOf="parent"
                   app:layout_constraintEnd_toEndOf="parent">
 
@@ -434,38 +504,25 @@ jobs:
                       android:clipToPadding="false" />
               </LinearLayout>
 
-              <!-- Нижняя сетка приложений (6 колонок, точно под карточками дока) -->
-              <androidx.recyclerview.widget.RecyclerView
-                  android:id="@+id/appsGrid"
-                  android:layout_width="0dp"
-                  android:layout_height="0dp"
-                  android:layout_marginTop="14dp"
-                  android:paddingStart="68dp"
-                  android:paddingEnd="68dp"
-                  android:paddingBottom="28dp"
-                  android:clipChildren="false"
-                  android:clipToPadding="false"
-                  app:layout_constraintTop_toBottomOf="@id/dockGlassBar"
-                  app:layout_constraintBottom_toBottomOf="parent"
-                  app:layout_constraintStart_toStartOf="parent"
-                  app:layout_constraintEnd_toEndOf="parent" />
-
           </androidx.constraintlayout.widget.ConstraintLayout>
           EOF
 
           cat << 'EOF' > app/src/main/res/layout/item_app_tile.xml
           <?xml version="1.0" encoding="utf-8"?>
           <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
+              android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:clipChildren="false"
               android:clipToPadding="false"
-              android:padding="7dp">
+              android:paddingStart="10dp"
+              android:paddingEnd="10dp"
+              android:paddingTop="8dp"
+              android:paddingBottom="8dp">
 
               <FrameLayout
                   android:id="@+id/appCardView"
-                  android:layout_width="132dp"
-                  android:layout_height="76dp"
+                  android:layout_width="148dp"
+                  android:layout_height="84dp"
                   android:layout_gravity="center"
                   android:background="@drawable/bg_card_rounded"
                   android:clickable="true"
@@ -508,11 +565,14 @@ jobs:
           cat << 'EOF' > app/src/main/java/com/appletv/launcher/MainActivity.kt
           package com.appletv.launcher
 
+          import android.Manifest
+          import android.app.Activity
           import android.app.Dialog
           import android.content.Context
           import android.content.Intent
           import android.content.SharedPreferences
           import android.content.pm.ApplicationInfo
+          import android.content.pm.PackageManager
           import android.content.pm.ResolveInfo
           import android.graphics.*
           import android.graphics.drawable.Drawable
@@ -522,7 +582,9 @@ jobs:
           import android.net.Uri
           import android.net.nsd.NsdManager
           import android.net.nsd.NsdServiceInfo
+          import android.os.Build
           import android.os.Bundle
+          import android.os.Environment
           import android.os.Handler
           import android.os.Looper
           import android.provider.Settings
@@ -539,10 +601,13 @@ jobs:
           import android.widget.*
           import androidx.appcompat.app.AlertDialog
           import androidx.appcompat.app.AppCompatActivity
-          import androidx.recyclerview.widget.GridLayoutManager
+          import androidx.core.app.ActivityCompat
+          import androidx.core.content.ContextCompat
           import androidx.recyclerview.widget.LinearLayoutManager
           import androidx.recyclerview.widget.RecyclerView
           import org.json.JSONObject
+          import java.io.File
+          import java.io.FileOutputStream
           import java.net.HttpURLConnection
           import java.net.URL
           import java.text.SimpleDateFormat
@@ -561,28 +626,29 @@ jobs:
           class MainActivity : AppCompatActivity() {
 
               private lateinit var prefs: SharedPreferences
-              private var dockApps = mutableListOf<AppEntry>()
-              private var gridApps = mutableListOf<AppEntry>()
               private var allApps = mutableListOf<AppEntry>()
 
               private var movingPackage: String? = null
+              private var pendingCaptureTargetValue: String? = null
+              private var pendingCaptureTargetLabel: String? = null
+
               private var nsdManager: NsdManager? = null
               private var registrationListener: NsdManager.RegistrationListener? = null
               private val mainHandler = Handler(Looper.getMainLooper())
 
-              private val aerialUrls = listOf(
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-                  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
-              )
+              companion object {
+                  private const val REQ_PICK_WALLPAPER_IMAGE = 9001
+                  private const val REQ_STORAGE_PERMISSION = 9002
+              }
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_main)
 
-                  prefs = getSharedPreferences("apple_tv_vibetv_prefs", Context.MODE_PRIVATE)
+                  prefs = getSharedPreferences("apple_tv_vibetv_v7_prefs", Context.MODE_PRIVATE)
 
                   setupTopHeader()
-                  applyWallpaperTheme(Color.parseColor("#1D3557"))
+                  loadWallpaperState(Color.parseColor("#1D3557"))
                   refreshApps()
                   startStatusAndWeatherUpdates()
                   registerBuiltInAirPlayService()
@@ -592,16 +658,13 @@ jobs:
                   updateGreetingAndDate()
 
                   findViewById<View>(R.id.btnSources).apply {
-                      setupPillFocusAnimation(this)
+                      setupTopButtonFocus(this)
                       setOnClickListener { showSourcesPopupMenu(this) }
                   }
 
                   findViewById<View>(R.id.btnWifiStatus).apply {
-                      setupPillFocusAnimation(this)
-                      setOnClickListener {
-                          // Быстрый переход к VPN или настройкам сети (как на 00:53 в видео)
-                          launchVpnOrSettings()
-                      }
+                      setupTopButtonFocus(this)
+                      setOnClickListener { launchVpnOrSettings() }
                       setOnLongClickListener {
                           try { startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) } catch (_: Exception) {}
                           true
@@ -609,8 +672,19 @@ jobs:
                   }
 
                   findViewById<View>(R.id.btnSettings).apply {
-                      setupPillFocusAnimation(this)
+                      setupTopButtonFocus(this)
                       setOnClickListener { showAppleTvSettingsDialog() }
+                  }
+              }
+
+              private fun setupTopButtonFocus(view: View) {
+                  // Без вырезания тени: используем только мягкое масштабирование, селектор сам рисует круглую/капсульную рамку
+                  view.setOnFocusChangeListener { v, hasFocus ->
+                      v.animate()
+                          .scaleX(if (hasFocus) 1.12f else 1.0f)
+                          .scaleY(if (hasFocus) 1.12f else 1.0f)
+                          .setDuration(160)
+                          .start()
                   }
               }
 
@@ -631,7 +705,6 @@ jobs:
                   findViewById<TextView>(R.id.tvDateTwoLine).text = "$dayOfWeek\n$dayAndMonth"
               }
 
-              // Выпадающее меню входов HDMI1 / HDMI2 / HDMI3 / AV точь-в-точь как на 00:51 в видео
               private fun showSourcesPopupMenu(anchor: View) {
                   val popup = PopupMenu(this, anchor)
                   popup.menu.add(0, 1, 0, "🔌  HDMI 1")
@@ -642,28 +715,325 @@ jobs:
                       try {
                           startActivity(Intent("com.android.tv.action.VIEW_INPUTS"))
                       } catch (_: Exception) {
-                          try {
-                              startActivity(Intent(Settings.ACTION_SETTINGS))
-                          } catch (_: Exception) {}
+                          try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (_: Exception) {}
                       }
                       true
                   }
                   popup.show()
               }
 
-              private fun setupPillFocusAnimation(view: View) {
-                  view.setOnFocusChangeListener { v, hasFocus ->
-                      v.animate()
-                          .scaleX(if (hasFocus) 1.10f else 1.0f)
-                          .scaleY(if (hasFocus) 1.10f else 1.0f)
-                          .translationZ(if (hasFocus) 16f else 0f)
-                          .setDuration(180)
-                          .start()
+              // =========================================================================
+              // СИСТЕМА УСТАНОВКИ ЛЮБЫХ ПОЛЬЗОВАТЕЛЬСКИХ ФОТО НА ОБОИ
+              // =========================================================================
+              private fun showPhotoWallpaperPickerDialog() {
+                  // Проверяем разрешения на чтение памяти, чтобы находить скинутые фото в Download / Pictures
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                      val perm = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE
+                      if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
+                          ActivityCompat.requestPermissions(this, arrayOf(perm, Manifest.permission.READ_EXTERNAL_STORAGE), REQ_STORAGE_PERMISSION)
+                      }
+                  }
+
+                  val options = mutableListOf(
+                      "📂 Выбрать фото через системный проводник / галерею",
+                      "🔍 Найти скинутые фото в папках Download и Pictures",
+                      "🌌 Сбросить фото (включить динамический градиент VibeTV)",
+                      "🌑 Сбросить фото (включить темный фон Cupertino Midnight)"
+                  )
+
+                  AlertDialog.Builder(this)
+                      .setTitle("🖼 Обои главного экрана")
+                      .setItems(options.toTypedArray()) { _, which ->
+                          when (which) {
+                              0 -> openSystemFilePickerForWallpaper()
+                              1 -> scanDeviceFoldersForImages()
+                              2 -> {
+                                  prefs.edit().remove("custom_wallpaper_path").putInt("wallpaper_mode", 0).apply()
+                                  loadWallpaperState(Color.parseColor("#1D3557"))
+                                  Toast.makeText(this, "Включен динамический фон", Toast.LENGTH_SHORT).show()
+                              }
+                              3 -> {
+                                  prefs.edit().remove("custom_wallpaper_path").putInt("wallpaper_mode", 1).apply()
+                                  loadWallpaperState(Color.parseColor("#1D3557"))
+                                  Toast.makeText(this, "Включен темный фон", Toast.LENGTH_SHORT).show()
+                              }
+                          }
+                      }
+                      .show()
+              }
+
+              private fun openSystemFilePickerForWallpaper() {
+                  try {
+                      val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                          addCategory(Intent.CATEGORY_OPENABLE)
+                          type = "image/*"
+                      }
+                      startActivityForResult(intent, REQ_PICK_WALLPAPER_IMAGE)
+                  } catch (_: Exception) {
+                      try {
+                          val fallback = Intent(Intent.ACTION_GET_CONTENT).apply { type = "image/*" }
+                          startActivityForResult(fallback, REQ_PICK_WALLPAPER_IMAGE)
+                      } catch (_: Exception) {
+                          // Если на ТВ вырезан системный проводник, сканируем папки напрямую
+                          scanDeviceFoldersForImages()
+                      }
+                  }
+              }
+
+              private fun scanDeviceFoldersForImages() {
+                  val foundFiles = mutableListOf<File>()
+                  val dirsToScan = listOf(
+                      Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                      Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+                      Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
+                      File("/sdcard/Download"),
+                      File("/sdcard/Pictures"),
+                      File("/storage/emulated/0/Download"),
+                      File("/storage/emulated/0/Pictures")
+                  )
+
+                  val extensions = listOf(".jpg", ".jpeg", ".png", ".webp")
+                  for (dir in dirsToScan) {
+                      if (dir != null && dir.exists() && dir.isDirectory) {
+                          dir.listFiles()?.forEach { file ->
+                              if (file.isFile && extensions.any { file.name.lowercase().endsWith(it) }) {
+                                  if (foundFiles.none { it.absolutePath == file.absolutePath }) {
+                                      foundFiles.add(file)
+                                  }
+                              }
+                          }
+                      }
+                  }
+
+                  if (foundFiles.isEmpty()) {
+                      AlertDialog.Builder(this)
+                          .setTitle("Фото не найдены")
+                          .setMessage("Скиньте любую картинку (.jpg или .png) на телевизор в папку Download или Pictures (например, через ADB AppControl или SendFilesToTV), и она сразу появится здесь!")
+                          .setPositiveButton("Понятно", null)
+                          .show()
+                      return
+                  }
+
+                  val names = foundFiles.map { "🖼 ${it.name} (${it.length() / 1024} КБ)" }.toTypedArray()
+                  AlertDialog.Builder(this)
+                      .setTitle("Выберите фото из памяти ТВ:")
+                      .setItems(names) { _, idx ->
+                          applyImageFileAsWallpaper(foundFiles[idx])
+                      }
+                      .show()
+              }
+
+              private fun applyImageFileAsWallpaper(sourceFile: File) {
+                  try {
+                      val destFile = File(filesDir, "custom_wallpaper.jpg")
+                      sourceFile.inputStream().use { input ->
+                          FileOutputStream(destFile).use { output ->
+                              input.copyTo(output)
+                          }
+                      }
+                      prefs.edit().putString("custom_wallpaper_path", destFile.absolutePath).apply()
+                      loadWallpaperState(Color.BLACK)
+                      Toast.makeText(this, "Фото-обои успешно установлены!", Toast.LENGTH_SHORT).show()
+                  } catch (e: Exception) {
+                      Toast.makeText(this, "Ошибка чтения файла: ${e.message}", Toast.LENGTH_LONG).show()
+                  }
+              }
+
+              override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+                  super.onActivityResult(requestCode, resultCode, data)
+                  if (requestCode == REQ_PICK_WALLPAPER_IMAGE && resultCode == Activity.RESULT_OK) {
+                      val uri = data?.data ?: return
+                      try {
+                          val destFile = File(filesDir, "custom_wallpaper.jpg")
+                          contentResolver.openInputStream(uri)?.use { input ->
+                              FileOutputStream(destFile).use { output ->
+                                  input.copyTo(output)
+                              }
+                          }
+                          prefs.edit().putString("custom_wallpaper_path", destFile.absolutePath).apply()
+                          loadWallpaperState(Color.BLACK)
+                          Toast.makeText(this, "Фото-обои успешно установлены!", Toast.LENGTH_SHORT).show()
+                      } catch (e: Exception) {
+                          Toast.makeText(this, "Не удалось загрузить фото", Toast.LENGTH_SHORT).show()
+                      }
+                  }
+              }
+
+              private fun loadWallpaperState(accentColor: Int) {
+                  val imageView = findViewById<ImageView>(R.id.customWallpaperImage)
+                  val ambientView = findViewById<View>(R.id.ambientGlowView)
+                  val customPath = prefs.getString("custom_wallpaper_path", null)
+
+                  if (!customPath.isNullOrBlank() && File(customPath).exists()) {
+                      val opts = BitmapFactory.Options().apply {
+                          inPreferredConfig = Bitmap.Config.RGB_565
+                      }
+                      val bmp = BitmapFactory.decodeFile(customPath, opts)
+                      if (bmp != null) {
+                          imageView.setImageBitmap(bmp)
+                          imageView.visibility = View.VISIBLE
+                          // Легкая виньетка сверху и снизу, чтобы белые часы и док всегда идеально читались на любом фото
+                          ambientView.background = GradientDrawable(
+                              GradientDrawable.Orientation.TOP_BOTTOM,
+                              intArrayOf(Color.parseColor("#66000000"), Color.parseColor("#11000000"), Color.parseColor("#88000000"))
+                          )
+                          return
+                      }
+                  }
+
+                  imageView.visibility = View.GONE
+                  val mode = prefs.getInt("wallpaper_mode", 0)
+                  val colors = when (mode) {
+                      0 -> {
+                          val glow = if (accentColor == Color.parseColor("#F5F5F7")) Color.parseColor("#1E3A5F") else manipulateColor(accentColor, 0.55f)
+                          intArrayOf(glow, Color.parseColor("#0B132B"), Color.parseColor("#05070F"))
+                      }
+                      else -> intArrayOf(Color.parseColor("#14213D"), Color.parseColor("#080D1A"), Color.parseColor("#020408"))
+                  }
+                  ambientView.background = GradientDrawable(GradientDrawable.Orientation.TL_BR, colors)
+              }
+
+              // =========================================================================
+              // МЕХАНИЗМ ПЕРЕНАЗНАЧЕНИЯ ЛЮБОЙ БРЕНДИРОВАННОЙ КНОПКИ ПУЛЬТА НА ЛЮБОЕ ПРИЛОЖЕНИЕ
+              // =========================================================================
+              private fun showMultiButtonRemapManagerDialog() {
+                  val mappedList = mutableListOf<String>()
+                  val mappedKeys = mutableListOf<Int>()
+
+                  for ((k, v) in prefs.all) {
+                      if (k.startsWith("remap_key_")) {
+                          val code = k.removePrefix("remap_key_").toIntOrNull() ?: continue
+                          val targetPkg = v as? String ?: continue
+                          val targetName = resolveTargetLabel(targetPkg)
+                          mappedList.add("🔘 Кнопка (KeyCode $code)  ➔  $targetName")
+                          mappedKeys.add(code)
+                      }
+                  }
+
+                  val menuItems = mutableListOf(
+                      "➕ Привязать новую кнопку пульта к любому приложению..."
+                  )
+                  menuItems.addAll(mappedList)
+                  if (mappedKeys.isNotEmpty()) {
+                      menuItems.add("🗑 Очистить все привязки кнопок пульта")
+                  }
+
+                  AlertDialog.Builder(this)
+                      .setTitle("🎮 Переназначение кнопок пульта (Okko, Иви, Смотрим, VK, Rutube)")
+                      .setItems(menuItems.toTypedArray()) { _, which ->
+                          when {
+                              which == 0 -> showSelectAppToBindButtonDialog()
+                              mappedKeys.isNotEmpty() && which == menuItems.size - 1 -> {
+                                  val editor = prefs.edit()
+                                  for (code in mappedKeys) editor.remove("remap_key_$code")
+                                  editor.apply()
+                                  Toast.makeText(this, "Все привязки кнопок сброшены", Toast.LENGTH_SHORT).show()
+                              }
+                              else -> {
+                                  val codeToRemove = mappedKeys[which - 1]
+                                  prefs.edit().remove("remap_key_$codeToRemove").apply()
+                                  Toast.makeText(this, "Привязка кнопки $codeToRemove удалена", Toast.LENGTH_SHORT).show()
+                              }
+                          }
+                      }
+                      .show()
+              }
+
+              private fun showSelectAppToBindButtonDialog() {
+                  val labels = mutableListOf(
+                      "🛡 Включить VPN (Happ / v2rayNG / Системный VPN)",
+                      "✨ Открыть голосовой/текстовый ИИ (Siri / Gemini / ChatGPT)"
+                  )
+                  val values = mutableListOf("action:vpn", "action:ai")
+
+                  for (app in allApps) {
+                      labels.add("📱 ${app.label}")
+                      values.add(app.packageName)
+                  }
+
+                  AlertDialog.Builder(this)
+                      .setTitle("Шаг 1: Выберите приложение, которое нужно открывать")
+                      .setItems(labels.toTypedArray()) { _, idx ->
+                          startInteractiveButtonCapture(values[idx], labels[idx])
+                      }
+                      .show()
+              }
+
+              private fun startInteractiveButtonCapture(targetValue: String, targetLabel: String) {
+                  pendingCaptureTargetValue = targetValue
+                  pendingCaptureTargetLabel = targetLabel
+                  AlertDialog.Builder(this)
+                      .setTitle("Шаг 2: Нажмите кнопку на пульте")
+                      .setMessage("Сейчас нажмите на пульте нужную брендированную кнопку (например: «Смотрим», «Okko», «Иви», «VK Видео», «Rutube» или «ТВ»), чтобы назначить на неё:\n\n$targetLabel")
+                      .setNegativeButton("Отмена") { _, _ ->
+                          pendingCaptureTargetValue = null
+                          pendingCaptureTargetLabel = null
+                      }
+                      .setOnKeyListener { dialog, keyCode, event ->
+                          if (event.action == KeyEvent.ACTION_DOWN &&
+                              keyCode !in listOf(
+                                  KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN,
+                                  KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
+                                  KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_BACK
+                              )
+                          ) {
+                              prefs.edit().putString("remap_key_$keyCode", targetValue).apply()
+                              pendingCaptureTargetValue = null
+                              pendingCaptureTargetLabel = null
+                              dialog.dismiss()
+                              Toast.makeText(
+                                  this@MainActivity,
+                                  "✅ Кнопка (код $keyCode) теперь открывает: $targetLabel",
+                                  Toast.LENGTH_LONG
+                              ).show()
+                              true
+                          } else {
+                              false
+                          }
+                      }
+                      .show()
+              }
+
+              private fun resolveTargetLabel(target: String): String {
+                  if (target == "action:vpn") return "🛡 VPN"
+                  if (target == "action:ai") return "✨ Siri / Gemini"
+                  val found = allApps.firstOrNull { it.packageName == target }
+                  return found?.label ?: target
+              }
+
+              override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+                  // Проверяем индивидуальные привязки кнопок пользователя
+                  val customTarget = prefs.getString("remap_key_$keyCode", null)
+                  if (customTarget != null) {
+                      executeTargetAction(customTarget)
+                      return true
+                  }
+
+                  // Запасной перехват стандартных кодов брендированных кнопок, если еще не настроены вручную
+                  if (keyCode in listOf(183, 184, 185, 186, 269, 270, 271, 10001, 10002)) {
+                      val fallback = prefs.getString("default_branded_action", "action:vpn") ?: "action:vpn"
+                      executeTargetAction(fallback)
+                      return true
+                  }
+
+                  if (keyCode == KeyEvent.KEYCODE_SEARCH || keyCode == KeyEvent.KEYCODE_VOICE_ASSIST) {
+                      openBuiltInAiWebView()
+                      return true
+                  }
+
+                  return super.onKeyDown(keyCode, event)
+              }
+
+              private fun executeTargetAction(target: String) {
+                  when (target) {
+                      "action:vpn" -> launchVpnOrSettings()
+                      "action:ai" -> openBuiltInAiWebView()
+                      else -> launchPackage(target)
                   }
               }
 
               // =========================================================================
-              // СПИСОК ПРИЛОЖЕНИЙ + СКРЫТИЕ ПРИЛОЖЕНИЙ + БРЕНДИРОВАННЫЕ КАРТОЧКИ VIBETV
+              // СПИСОК ПРИЛОЖЕНИЙ, СКРЫТИЕ И ЕДИНЫЙ ГОРИЗОНТАЛЬНЫЙ РЯД ВНИЗУ
               // =========================================================================
               private fun getHiddenPackages(): MutableSet<String> {
                   return (prefs.getStringSet("hidden_packages", emptySet()) ?: emptySet()).toMutableSet()
@@ -674,19 +1044,19 @@ jobs:
                   set.add(pkg)
                   prefs.edit().putStringSet("hidden_packages", set).apply()
                   refreshApps()
-                  Toast.makeText(this, "Приложение «$label» скрыто. Вернуть можно в Настройках ⚙", Toast.LENGTH_LONG).show()
+                  Toast.makeText(this, "«$label» скрыто. Вернуть можно в Настройках ⚙", Toast.LENGTH_LONG).show()
               }
 
               private fun showHiddenPackagesManagerDialog() {
                   val hidden = getHiddenPackages().toList()
                   if (hidden.isEmpty()) {
-                      Toast.makeText(this, "Список скрытых приложений пуст", Toast.LENGTH_SHORT).show()
+                      Toast.makeText(this, "Нет скрытых приложений", Toast.LENGTH_SHORT).show()
                       return
                   }
                   val pm = packageManager
                   val labels = hidden.map { pkg ->
                       try {
-                          pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString() + " ($pkg)"
+                          pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
                       } catch (_: Exception) {
                           pkg
                       }
@@ -699,19 +1069,17 @@ jobs:
                       .setMultiChoiceItems(labels, checked) { _, which, isChecked ->
                           checked[which] = isChecked
                       }
-                      .setPositiveButton("Сохранить") { _, _ ->
+                      .setPositiveButton("Применить") { _, _ ->
                           val newSet = mutableSetOf<String>()
                           for (i in hidden.indices) {
                               if (checked[i]) newSet.add(hidden[i])
                           }
                           prefs.edit().putStringSet("hidden_packages", newSet).apply()
                           refreshApps()
-                          Toast.makeText(this, "Список приложений обновлен", Toast.LENGTH_SHORT).show()
                       }
-                      .setNegativeButton("Показать все") { _, _ ->
+                      .setNegativeButton("Вернуть все") { _, _ ->
                           prefs.edit().remove("hidden_packages").apply()
                           refreshApps()
-                          Toast.makeText(this, "Все скрытые приложения восстановлены", Toast.LENGTH_SHORT).show()
                       }
                       .show()
               }
@@ -791,24 +1159,20 @@ jobs:
                   })
 
                   allApps = filtered
-                  dockApps = allApps.take(6).toMutableList()
-                  gridApps = if (allApps.size > 6) allApps.drop(6).toMutableList() else mutableListOf()
-
-                  setupAdapters()
+                  setupSingleRowDockAdapter()
               }
 
               private fun saveCurrentAppOrder() {
-                  val combined = (dockApps + gridApps).joinToString(",") { it.packageName }
+                  val combined = allApps.joinToString(",") { it.packageName }
                   prefs.edit().putString("saved_app_order", combined).apply()
               }
 
-              // Фирменные цвета плиток точно как в видео VibeTV на 00:49
               private fun detectBrandColor(label: String, pkg: String): Int {
                   val s = "$label $pkg".lowercase()
                   return when {
-                      s.contains("youtube") || s.contains("smarttube") -> Color.parseColor("#F5F5F7") // Белая карточка YouTube как в видео
+                      s.contains("youtube") || s.contains("smarttube") -> Color.parseColor("#F5F5F7")
                       s.contains("netflix") -> Color.parseColor("#F5F5F7")
-                      s.contains("okko") -> Color.parseColor("#5E2B97") // Фиолетовый Okko
+                      s.contains("okko") -> Color.parseColor("#5E2B97")
                       s.contains("кинопоиск") || s.contains("kinopoisk") -> Color.parseColor("#FF5500")
                       s.contains("twitch") -> Color.parseColor("#6441A5")
                       s.contains("rutube") -> Color.parseColor("#4B2882")
@@ -816,7 +1180,7 @@ jobs:
                       s.contains("vk") -> Color.parseColor("#19191D")
                       s.contains("wink") || s.contains("винк") -> Color.parseColor("#FF5C00")
                       s.contains("иви") || s.contains("ivi") -> Color.parseColor("#EA003D")
-                      s.contains("happ") || s.contains("v2ray") || s.contains("vpn") -> Color.parseColor("#1C2430")
+                      s.contains("happ") || s.contains("v2ray") || s.contains("vpn") -> Color.parseColor("#2B3A4A")
                       else -> {
                           val hash = pkg.hashCode()
                           Color.HSVToColor(floatArrayOf(((hash and 0xFF) % 360).toFloat(), 0.60f, 0.28f))
@@ -843,7 +1207,6 @@ jobs:
                   paint.shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), brandColor, c2, Shader.TileMode.CLAMP)
                   canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 
-                  // Рисуем иконку и название в стиле горизонтального логотипа Apple TV
                   val iconSize = 68
                   val left = (width - iconSize) / 2
                   val top = (height - iconSize) / 2 - 14
@@ -871,30 +1234,19 @@ jobs:
                   return Color.argb(a, r, g, b)
               }
 
-              // =========================================================================
-              // СЕТКА И ДОК ПО 6 КОЛОНОК + КОНТЕКСТНОЕ МЕНЮ (СКРЫТЬ / ДВИГАТЬ)
-              // =========================================================================
-              private fun setupAdapters() {
+              private fun setupSingleRowDockAdapter() {
                   val dockRv = findViewById<RecyclerView>(R.id.dockRecycler)
-                  dockRv.layoutManager = GridLayoutManager(this, 6)
-                  dockRv.adapter = createCardAdapter(dockApps)
-
-                  val gridRv = findViewById<RecyclerView>(R.id.appsGrid)
-                  gridRv.layoutManager = GridLayoutManager(this, 6)
-                  gridRv.adapter = createCardAdapter(gridApps)
-              }
-
-              private fun createCardAdapter(list: MutableList<AppEntry>): RecyclerView.Adapter<RecyclerView.ViewHolder> {
-                  return object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+                  dockRv.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+                  dockRv.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                       override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
                           val v = layoutInflater.inflate(R.layout.item_app_tile, parent, false)
                           return object : RecyclerView.ViewHolder(v) {}
                       }
 
-                      override fun getItemCount() = list.size
+                      override fun getItemCount() = allApps.size
 
                       override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-                          val app = list[position]
+                          val app = allApps[position]
                           val cardView = holder.itemView.findViewById<FrameLayout>(R.id.appCardView)
                           val artwork = holder.itemView.findViewById<ImageView>(R.id.appCardArtwork)
                           val border = holder.itemView.findViewById<View>(R.id.focusBorder)
@@ -909,11 +1261,11 @@ jobs:
                           cardView.setOnFocusChangeListener { v, hasFocus ->
                               if (hasFocus) {
                                   findViewById<TextView>(R.id.tvFocusedAppTitle).text = app.label
-                                  applyWallpaperTheme(app.brandColor)
+                                  loadWallpaperState(app.brandColor)
                                   v.animate()
-                                      .scaleX(1.12f)
-                                      .scaleY(1.12f)
-                                      .translationY(-5f)
+                                      .scaleX(1.14f)
+                                      .scaleY(1.14f)
+                                      .translationY(-6f)
                                       .translationZ(28f)
                                       .setInterpolator(OvershootInterpolator(1.3f))
                                       .setDuration(200)
@@ -942,26 +1294,27 @@ jobs:
                               }
                           }
 
-                          // Долгое нажатие OK: меню карточки (Скрыть приложение / Переместить / Открыть)
                           cardView.setOnLongClickListener {
                               val options = arrayOf(
+                                  "🎮 Привязать «${app.label}» к любой кнопке пульта",
                                   "↔️ Переместить карточку (стрелками ◄ ►)",
                                   "👁 Скрыть «${app.label}» с главного экрана",
                                   "▶️ Открыть «${app.label}»",
-                                  "ℹ️ О приложении (системное меню)"
+                                  "ℹ️ Системная информация о приложении"
                               )
                               AlertDialog.Builder(this@MainActivity)
                                   .setTitle(app.label)
                                   .setItems(options) { _, which ->
                                       when (which) {
-                                          0 -> {
+                                          0 -> startInteractiveButtonCapture(app.packageName, app.label)
+                                          1 -> {
                                               movingPackage = app.packageName
                                               badge.visibility = View.VISIBLE
                                               Toast.makeText(this@MainActivity, "Двигайте «${app.label}» стрелками ◄ ► и нажмите OK", Toast.LENGTH_SHORT).show()
                                           }
-                                          1 -> hidePackage(app.packageName, app.label)
-                                          2 -> launchPackage(app.packageName)
-                                          3 -> {
+                                          2 -> hidePackage(app.packageName, app.label)
+                                          3 -> launchPackage(app.packageName)
+                                          4 -> {
                                               try {
                                                   val i = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                                                   i.data = Uri.parse("package:${app.packageName}")
@@ -982,15 +1335,15 @@ jobs:
                                   when (keyCode) {
                                       KeyEvent.KEYCODE_DPAD_LEFT -> {
                                           if (currentPos > 0) {
-                                              Collections.swap(list, currentPos, currentPos - 1)
+                                              Collections.swap(allApps, currentPos, currentPos - 1)
                                               notifyItemMoved(currentPos, currentPos - 1)
                                               saveCurrentAppOrder()
                                           }
                                           return@setOnKeyListener true
                                       }
                                       KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                                          if (currentPos < list.size - 1) {
-                                              Collections.swap(list, currentPos, currentPos + 1)
+                                          if (currentPos < allApps.size - 1) {
+                                              Collections.swap(allApps, currentPos, currentPos + 1)
                                               notifyItemMoved(currentPos, currentPos + 1)
                                               saveCurrentAppOrder()
                                           }
@@ -1001,47 +1354,6 @@ jobs:
                               false
                           }
                       }
-                  }
-              }
-
-              // =========================================================================
-              // ДИНАМИЧЕСКИЙ ФОН VIBE TV + ЖИВЫЕ ОБОИ APPLE AERIAL
-              // =========================================================================
-              private fun applyWallpaperTheme(accentColor: Int) {
-                  val mode = prefs.getInt("wallpaper_mode", 0)
-                  val videoView = findViewById<VideoView>(R.id.aerialVideoView)
-                  val ambientView = findViewById<View>(R.id.ambientGlowView)
-
-                  if (mode == 3 || mode == 4) {
-                      if (videoView.visibility != View.VISIBLE) {
-                          videoView.visibility = View.VISIBLE
-                          val url = aerialUrls[mode % aerialUrls.size]
-                          try {
-                              videoView.setVideoURI(Uri.parse(url))
-                              videoView.setOnPreparedListener { mp ->
-                                  mp.isLooping = true
-                                  mp.setVolume(0f, 0f)
-                                  videoView.start()
-                              }
-                          } catch (_: Exception) {}
-                      }
-                      ambientView.background = GradientDrawable(
-                          GradientDrawable.Orientation.TOP_BOTTOM,
-                          intArrayOf(Color.parseColor("#8804060C"), Color.parseColor("#4404060C"), Color.parseColor("#CC020305"))
-                      )
-                  } else {
-                      videoView.stopPlayback()
-                      videoView.visibility = View.GONE
-                      val colors = when (mode) {
-                          0 -> {
-                              // Динамическое атмосферное свечение VibeTV как на видео (00:47)
-                              val glow = if (accentColor == Color.parseColor("#F5F5F7")) Color.parseColor("#1E3A5F") else manipulateColor(accentColor, 0.55f)
-                              intArrayOf(glow, Color.parseColor("#0B132B"), Color.parseColor("#05070F"))
-                          }
-                          1 -> intArrayOf(Color.parseColor("#182B49"), Color.parseColor("#090E1A"), Color.parseColor("#020305"))
-                          else -> intArrayOf(Color.parseColor("#3B1C32"), Color.parseColor("#180B1A"), Color.parseColor("#040205"))
-                      }
-                      ambientView.background = GradientDrawable(GradientDrawable.Orientation.TL_BR, colors)
                   }
               }
 
@@ -1144,7 +1456,7 @@ jobs:
                   try {
                       nsdManager = getSystemService(Context.NSD_SERVICE) as NsdManager
                       val serviceInfo = NsdServiceInfo().apply {
-                          serviceName = "TV-BOX"
+                          serviceName = "Apple TV"
                           serviceType = "_airplay._tcp."
                           port = 7000
                       }
@@ -1156,42 +1468,6 @@ jobs:
                       }
                       nsdManager?.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
                   } catch (_: Exception) {}
-              }
-
-              override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-                  if ( prefs.getBoolean("capture_next_key", false) &&
-                       keyCode !in listOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_BACK) ) {
-                      prefs.edit()
-                          .putInt("custom_smotrim_keycode", keyCode)
-                          .putBoolean("capture_next_key", false)
-                          .apply()
-                      Toast.makeText(this, "Кнопка пульта (код $keyCode) привязана!", Toast.LENGTH_LONG).show()
-                      return true
-                  }
-
-                  val savedSmotrimCode = prefs.getInt("custom_smotrim_keycode", -1)
-                  if (keyCode == savedSmotrimCode || keyCode in listOf(183, 184, 185, 186, 269, 270, 271, 10001, 10002)) {
-                      executeMappedRemoteAction()
-                      return true
-                  }
-
-                  if (keyCode == KeyEvent.KEYCODE_SEARCH || keyCode == KeyEvent.KEYCODE_VOICE_ASSIST) {
-                      openBuiltInAiWebView()
-                      return true
-                  }
-
-                  return super.onKeyDown(keyCode, event)
-              }
-
-              private fun executeMappedRemoteAction() {
-                  when (val action = prefs.getString("smotrim_action", "vpn") ?: "vpn") {
-                      "vpn" -> launchVpnOrSettings()
-                      "wink" -> launchAppByKeyword("wink", "винк")
-                      "kinopoisk" -> launchAppByKeyword("kinopoisk", "кинопоиск")
-                      "youtube" -> launchAppByKeyword("youtube", "smarttube")
-                      "ai" -> openBuiltInAiWebView()
-                      else -> launchPackage(action)
-                  }
               }
 
               private fun launchVpnOrSettings() {
@@ -1211,13 +1487,6 @@ jobs:
                   }
               }
 
-              private fun launchAppByKeyword(vararg keywords: String) {
-                  val found = allApps.firstOrNull { app ->
-                      keywords.any { kw -> app.label.lowercase().contains(kw) || app.packageName.lowercase().contains(kw) }
-                  }
-                  if (found != null) launchPackage(found.packageName)
-              }
-
               private fun launchPackage(pkg: String) {
                   val intent = packageManager.getLaunchIntentForPackage(pkg)
                       ?: packageManager.getLeanbackLaunchIntentForPackage(pkg)
@@ -1227,76 +1496,29 @@ jobs:
               private fun showAppleTvSettingsDialog() {
                   val hiddenCount = getHiddenPackages().size
                   val items = arrayOf(
+                      "🖼 Выбрать свое фото на обои (из папки Download / Галереи)",
+                      "🎮 Переназначить кнопки пульта (Okko, Иви, Смотрим, VK, Rutube)",
                       "👁 Управление скрытыми приложениями (скрыто: $hiddenCount)",
                       "✨ Открыть голосовой/текстовый ИИ (Siri / Gemini / ChatGPT)",
-                      "🎮 Назначить действие на кнопку «СМОТРИМ» (VPN / Wink и др.)",
-                      "🎯 Захватить физическую кнопку «СМОТРИМ» с пульта",
-                      "🎨 Обои: Динамическое свечение VibeTV (как на видео)",
-                      "🌌 Обои: Глубокий синий Cupertino Midnight",
-                      "🌅 Обои: Градиент California Sunset",
-                      "🎬 Обои: Живое 4K видео Apple Aerial",
                       "🔄 Сбросить порядок иконок по умолчанию",
-                      "⚙️ Системные настройки Android TV"
+                      "⚙️ Открыть системные настройки Android TV"
                   )
 
                   AlertDialog.Builder(this)
-                      .setTitle(" Настройки VibeTV (Apple TV Launcher)")
+                      .setTitle(" Настройки Apple TV v7.0")
                       .setItems(items) { _, which ->
                           when (which) {
-                              0 -> showHiddenPackagesManagerDialog()
-                              1 -> openBuiltInAiWebView()
-                              2 -> showButtonActionPicker()
-                              3 -> {
-                                  prefs.edit().putBoolean("capture_next_key", true).apply()
-                                  Toast.makeText(this, "Нажмите сейчас кнопку «СМОТРИМ» на пульте!", Toast.LENGTH_LONG).show()
-                              }
+                              0 -> showPhotoWallpaperPickerDialog()
+                              1 -> showMultiButtonRemapManagerDialog()
+                              2 -> showHiddenPackagesManagerDialog()
+                              3 -> openBuiltInAiWebView()
                               4 -> {
-                                  prefs.edit().putInt("wallpaper_mode", 0).apply()
-                                  applyWallpaperTheme(Color.parseColor("#1D3557"))
-                              }
-                              5 -> {
-                                  prefs.edit().putInt("wallpaper_mode", 1).apply()
-                                  applyWallpaperTheme(Color.parseColor("#1D3557"))
-                              }
-                              6 -> {
-                                  prefs.edit().putInt("wallpaper_mode", 2).apply()
-                                  applyWallpaperTheme(Color.parseColor("#3B1C32"))
-                              }
-                              7 -> {
-                                  prefs.edit().putInt("wallpaper_mode", 3).apply()
-                                  applyWallpaperTheme(Color.BLACK)
-                              }
-                              8 -> {
                                   prefs.edit().remove("saved_app_order").apply()
                                   refreshApps()
                                   Toast.makeText(this, "Порядок иконок сброшен", Toast.LENGTH_SHORT).show()
                               }
-                              9 -> startActivity(Intent(Settings.ACTION_SETTINGS))
+                              5 -> startActivity(Intent(Settings.ACTION_SETTINGS))
                           }
-                      }
-                      .show()
-              }
-
-              private fun showButtonActionPicker() {
-                  val labels = mutableListOf(
-                      "🛡 Включить VPN (Happ / v2rayNG / Системный VPN)",
-                      "🎬 Запустить Wink (Винк)",
-                      "🍿 Запустить Кинопоиск",
-                      "▶️ Запустить YouTube",
-                      "✨ Открыть Siri / Gemini / ChatGPT"
-                  )
-                  val values = mutableListOf("vpn", "wink", "kinopoisk", "youtube", "ai")
-
-                  for (app in allApps) {
-                      labels.add("📱 Приложение: ${app.label}")
-                      values.add(app.packageName)
-                  }
-
-                  AlertDialog.Builder(this)
-                      .setTitle("Что делать при нажатии кнопки «СМОТРИМ»?")
-                      .setItems(labels.toTypedArray()) { _, idx ->
-                          prefs.edit().putString("smotrim_action", values[idx]).apply()
-                          Toast.makeText(this, "Кнопка «СМОТРИМ» назначена на: ${labels[idx]}", Toast.LENGTH_SHORT).show()
                       }
                       .show()
               }
@@ -1309,5 +1531,5 @@ jobs:
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppleTV-Vibe-Launcher-v6.0
+          name: AppleTV-Vibe-Launcher-v7.0-PhotoEdition
           path: app/build/outputs/apk/debug/app-debug.apk
