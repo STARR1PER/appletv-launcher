@@ -1,333 +1,400 @@
 name: Build Apple tvOS Launcher
 
 on:
-  push:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
+push:
+branches: [ "main", "master" ]
+workflow_dispatch:
 
 jobs:
-  build-tvos-launcher:
-    runs-on: ubuntu-latest
+build-tvos-launcher:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+steps:
+  - name: Checkout Repository
+    uses: actions/checkout@v4
 
-      - name: Set up Zulu JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+  - name: Set up Zulu JDK 17
+    uses: actions/setup-java@v4
+    with:
+      distribution: 'zulu'
+      java-version: '17'
 
-      - name: Create Project Files & Gradle Wrapper
-        run: |
-          mkdir -p app/src/main/java/com/appletv/launcher
-          mkdir -p app/src/main/res/layout
-          mkdir -p app/src/main/res/values
-          mkdir -p app/src/main/res/drawable
+  - name: Create Project Files & Gradle Wrapper
+    run: |
+      mkdir -p app/src/main/java/com/appletv/launcher
+      mkdir -p app/src/main/res/layout
+      mkdir -p app/src/main/res/values
+      mkdir -p app/src/main/res/drawable
 
-          cat << 'EOF' > settings.gradle
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories { google(); mavenCentral() }
-          }
-          rootProject.name = "AppleTvLauncher"
-          include ':app'
-          EOF
+      cat << 'EOF' > settings.gradle
+      pluginManagement {
+          repositories { google(); mavenCentral(); gradlePluginPortal() }
+      }
+      dependencyResolutionManagement {
+          repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+          repositories { google(); mavenCentral() }
+      }
+      rootProject.name = "AppleTvLauncher"
+      include ':app'
+      EOF
 
-          cat << 'EOF' > gradle.properties
-          android.useAndroidX=true
-          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-          EOF
+      cat << 'EOF' > gradle.properties
+      android.useAndroidX=true
+      org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+      EOF
 
-          cat << 'EOF' > build.gradle
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:8.1.0'
-                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22'
-              }
-          }
-          allprojects { repositories { google(); mavenCentral() } }
-          EOF
-
-          cat << 'EOF' > app/build.gradle
-          apply plugin: 'com.android.application'
-          apply plugin: 'org.jetbrains.kotlin.android'
-
-          android {
-              namespace 'com.appletv.launcher'
-              compileSdk 34
-              defaultConfig {
-                  applicationId "com.appletv.launcher"
-                  minSdk 26
-                  targetSdk 34
-                  versionCode 18
-                  versionName "4.6.0"
-              }
-              buildTypes {
-                  release { minifyEnabled false }
-              }
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_17
-                  targetCompatibility JavaVersion.VERSION_17
-              }
-              kotlinOptions { jvmTarget = '17' }
-          }
+      cat << 'EOF' > build.gradle
+      buildscript {
+          repositories { google(); mavenCentral() }
           dependencies {
-              implementation 'androidx.core:core-ktx:1.12.0'
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-              implementation 'androidx.recyclerview:recyclerview:1.3.2'
+              classpath 'com.android.tools.build:gradle:8.1.0'
+              classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22'
           }
-          EOF
+      }
+      allprojects { repositories { google(); mavenCentral() } }
+      EOF
 
-          cat << 'EOF' > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-              <uses-feature android:name="android.software.leanback" android:required="false" />
-              <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
-              <application
-                  android:allowBackup="true"
-                  android:icon="@drawable/ic_tvos_logo"
-                  android:banner="@drawable/ic_tvos_logo"
-                  android:label="Apple TV"
-                  android:theme="@style/Theme.AppleTv">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTask"
-                      android:screenOrientation="landscape">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.HOME" />
-                          <category android:name="android.intent.category.DEFAULT" />
-                          <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
+      cat << 'EOF' > app/build.gradle
+      apply plugin: 'com.android.application'
+      apply plugin: 'org.jetbrains.kotlin.android'
 
-          cat << 'EOF' > app/src/main/res/values/colors.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="tvos_bg_dark">#020305</color>
-              <color name="tvos_text_primary">#FFFFFF</color>
-              <color name="tvos_dock_glass">#18FFFFFF</color>
-              <color name="tvos_dock_stroke">#35FFFFFF</color>
-              <color name="tvos_pill_bg">#20FFFFFF</color>
-          </resources>
-          EOF
+      android {
+          namespace 'com.appletv.launcher'
+          compileSdk 34
+          defaultConfig {
+              applicationId "com.appletv.launcher"
+              minSdk 26
+              targetSdk 34
+              versionCode 19
+              versionName "4.7.0"
+          }
+          buildTypes {
+              release { minifyEnabled false }
+          }
+          compileOptions {
+              sourceCompatibility JavaVersion.VERSION_17
+              targetCompatibility JavaVersion.VERSION_17
+          }
+          kotlinOptions { jvmTarget = '17' }
+      }
+      dependencies {
+          implementation 'androidx.core:core-ktx:1.12.0'
+          implementation 'androidx.appcompat:appcompat:1.6.1'
+          implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+          implementation 'androidx.recyclerview:recyclerview:1.3.2'
+          implementation 'com.google.android.material:material:1.9.0'
+      }
+      EOF
 
-          cat << 'EOF' > app/src/main/res/values/themes.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <style name="Theme.AppleTv" parent="Theme.AppCompat.NoActionBar">
-                  <item name="android:windowBackground">@color/tvos_bg_dark</item>
-                  <item name="android:windowNoTitle">true</item>
-                  <item name="android:windowFullscreen">true</item>
-              </style>
-          </resources>
-          EOF
+      cat << 'EOF' > app/src/main/AndroidManifest.xml
+      <?xml version="1.0" encoding="utf-8"?>
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+          <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+          <uses-feature android:name="android.software.leanback" android:required="false" />
+          <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+          <application
+              android:allowBackup="true"
+              android:icon="@drawable/ic_tvos_logo"
+              android:banner="@drawable/ic_tvos_logo"
+              android:label="Apple TV"
+              android:theme="@style/Theme.AppleTv">
+              <activity
+                  android:name=".MainActivity"
+                  android:exported="true"
+                  android:launchMode="singleTask"
+                  android:screenOrientation="landscape">
+                  <intent-filter>
+                      <action android:name="android.intent.action.MAIN" />
+                      <category android:name="android.intent.category.HOME" />
+                      <category android:name="android.intent.category.DEFAULT" />
+                      <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                      <category android:name="android.intent.category.LAUNCHER" />
+                  </intent-filter>
+              </activity>
+          </application>
+      </manifest>
+      EOF
 
-          cat << 'EOF' > app/src/main/res/drawable/bg_dock_glass.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="26dp" />
-              <solid android:color="@color/tvos_dock_glass" />
-              <stroke android:width="1dp" android:color="@color/tvos_dock_stroke" />
-          </shape>
-          EOF
+      cat << 'EOF' > app/src/main/res/values/colors.xml
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <color name="tvos_bg_dark">#020305</color>
+          <color name="tvos_text_primary">#FFFFFF</color>
+          <color name="tvos_dock_glass">#18FFFFFF</color>
+          <color name="tvos_dock_stroke">#35FFFFFF</color>
+          <color name="tvos_pill_bg">#20FFFFFF</color>
+      </resources>
+      EOF
 
-          cat << 'EOF' > app/src/main/res/drawable/bg_top_pill.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="50dp" />
-              <solid android:color="@color/tvos_pill_bg" />
-              <stroke android:width="1dp" android:color="#3FFFFFFF" />
-          </shape>
-          EOF
+      cat << 'EOF' > app/src/main/res/values/themes.xml
+      <?xml version="1.0" encoding="utf-8"?>
+      <resources>
+          <style name="Theme.AppleTv" parent="Theme.AppCompat.NoActionBar">
+              <item name="android:windowBackground">@color/tvos_bg_dark</item>
+              <item name="android:windowNoTitle">true</item>
+              <item name="android:windowFullscreen">true</item>
+          </style>
+      </resources>
+      EOF
 
-          cat << 'EOF' > app/src/main/res/drawable/ic_tvos_logo.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="48dp" android:height="48dp"
-              android:viewportWidth="24" android:viewportHeight="24">
-              <path android:fillColor="#FFFFFF" android:pathData="M21,3H3C1.9,3 1,3.9 1,5v12c0,1.1 0.9,2 2,2h5v2h8v-2h5c1.1,0 2,-0.9 2,-2V5C23,3.9 22.1,3 21,3zM21,17H3V5h18V17z"/>
-          </vector>
-          EOF
+      cat << 'EOF' > app/src/main/res/drawable/bg_dock_glass.xml
+      <?xml version="1.0" encoding="utf-8"?>
+      <shape xmlns:android="http://schemas.android.com/apk/res/android">
+          <corners android:radius="26dp" />
+          <solid android:color="@color/tvos_dock_glass" />
+          <stroke android:width="1dp" android:color="@color/tvos_dock_stroke" />
+      </shape>
+      EOF
 
-          cat << 'EOF' > app/src/main/res/layout/activity_main.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:background="@color/tvos_bg_dark">
+      cat << 'EOF' > app/src/main/res/drawable/bg_top_pill.xml
+      <?xml version="1.0" encoding="utf-8"?>
+      <shape xmlns:android="http://schemas.android.com/apk/res/android">
+          <corners android:radius="50dp" />
+          <solid android:color="@color/tvos_pill_bg" />
+          <stroke android:width="1dp" android:color="#3FFFFFFF" />
+      </shape>
+      EOF
 
-              <View android:id="@+id/ambientGlowView" android:layout_width="match_parent" android:layout_height="match_parent" />
+      cat << 'EOF' > app/src/main/res/drawable/ic_tvos_logo.xml
+      <?xml version="1.0" encoding="utf-8"?>
+      <vector xmlns:android="http://schemas.android.com/apk/res/android"
+          android:width="48dp" android:height="48dp"
+          android:viewportWidth="24" android:viewportHeight="24">
+          <path android:fillColor="#FFFFFF" android:pathData="M21,3H3C1.9,3 1,3.9 1,5v12c0,1.1 0.9,2 2,2h5v2h8v-2h5c1.1,0 2,-0.9 2,-2V5C23,3.9 22.1,3 21,3zM21,17H3V5h18V17z"/>
+      </vector>
+      EOF
 
-              <LinearLayout
-                  android:id="@+id/topHeader"
-                  android:layout_width="0dp" android:layout_height="wrap_content"
-                  android:layout_marginStart="80dp" android:layout_marginEnd="80dp" android:layout_marginTop="48dp"
-                  android:gravity="center_vertical" android:orientation="horizontal"
-                  app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
+      cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+      <?xml version="1.0" encoding="utf-8"?>
+      <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:app="http://schemas.android.com/apk/res-auto"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:background="@color/tvos_bg_dark">
 
-                  <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical">
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                          android:text=" TV  •  ДОБРЫЙ ВЕЧЕР" android:textColor="#B0FFFFFF" android:textSize="11sp" android:textStyle="bold" />
-                      <TextClock android:layout_width="wrap_content" android:layout_height="wrap_content"
-                          android:format24Hour="HH:mm" android:textColor="@color/tvos_text_primary" android:textSize="40sp" android:fontFamily="sans-serif-light" />
-                  </LinearLayout>
+          <View android:id="@+id/ambientGlowView" android:layout_width="match_parent" android:layout_height="match_parent" />
 
-                  <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+          <LinearLayout
+              android:id="@+id/topHeader"
+              android:layout_width="0dp" android:layout_height="wrap_content"
+              android:layout_marginStart="80dp" android:layout_marginEnd="80dp" android:layout_marginTop="56dp"
+              android:gravity="center_vertical" android:orientation="horizontal"
+              app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
 
-                  <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
-                      <TextView android:id="@+id/btnSources" android:layout_width="wrap_content" android:layout_height="40dp" android:layout_marginEnd="12dp"
-                          android:background="@drawable/bg_top_pill" android:clickable="true" android:focusable="true" android:gravity="center"
-                          android:paddingStart="18dp" android:paddingEnd="18dp" android:text="📺  Источники" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
-                      <TextView android:id="@+id/btnSettings" android:layout_width="40dp" android:layout_height="40dp"
-                          android:background="@drawable/bg_top_pill" android:clickable="true" android:focusable="true" android:gravity="center"
-                          android:text="⚙" android:textColor="#FFFFFF" android:textSize="17sp" />
-                  </LinearLayout>
+              <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical">
+                  <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:text=" TV  •  ДОБРЫЙ ВЕЧЕР" android:textColor="#B0FFFFFF" android:textSize="12sp" android:textStyle="bold" />
+                  <TextClock android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:format24Hour="HH:mm" android:textColor="@color/tvos_text_primary" android:textSize="44sp" android:fontFamily="sans-serif-light" />
               </LinearLayout>
 
-              <LinearLayout android:id="@+id/dockGlassBar"
-                  android:layout_width="0dp" android:layout_height="110dp"
-                  android:layout_marginStart="68dp" android:layout_marginEnd="68dp" android:layout_marginTop="32dp"
-                  android:background="@drawable/bg_dock_glass" android:paddingStart="12dp" android:paddingEnd="12dp" android:gravity="center_vertical"
-                  app:layout_constraintTop_toBottomOf="@id/topHeader" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
-                  <androidx.recyclerview.widget.RecyclerView android:id="@+id/dockRecycler" android:layout_width="match_parent" android:layout_height="wrap_content" />
+              <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+              <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                  <TextView android:id="@+id/btnSources" android:layout_width="wrap_content" android:layout_height="42dp" android:layout_marginEnd="12dp"
+                      android:background="@drawable/bg_top_pill" android:clickable="true" android:focusable="true" android:gravity="center"
+                      android:paddingStart="20dp" android:paddingEnd="20dp" android:text="📺  Источники" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" />
+                  <TextView android:id="@+id/btnSettings" android:layout_width="42dp" android:layout_height="42dp"
+                      android:background="@drawable/bg_top_pill" android:clickable="true" android:focusable="true" android:gravity="center"
+                      android:text="⚙" android:textColor="#FFFFFF" android:textSize="18sp" />
               </LinearLayout>
+          </LinearLayout>
 
-              <androidx.recyclerview.widget.RecyclerView android:id="@+id/appsGrid"
-                  android:layout_width="0dp" android:layout_height="0dp" android:layout_marginTop="16dp"
-                  android:paddingStart="80dp" android:paddingEnd="80dp" android:paddingBottom="28dp"
-                  app:layout_constraintTop_toBottomOf="@id/dockGlassBar" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
-          </androidx.constraintlayout.widget.ConstraintLayout>
-          EOF
+          <LinearLayout android:id="@+id/dockGlassBar"
+              android:layout_width="0dp" android:layout_height="120dp"
+              android:layout_marginStart="68dp" android:layout_marginEnd="68dp" android:layout_marginTop="45dp"
+              android:background="@drawable/bg_dock_glass" android:paddingStart="12dp" android:paddingEnd="12dp" android:gravity="center_vertical"
+              app:layout_constraintTop_toBottomOf="@id/topHeader" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
+              <androidx.recyclerview.widget.RecyclerView android:id="@+id/dockRecycler" android:layout_width="match_parent" android:layout_height="wrap_content" />
+          </LinearLayout>
 
-          cat << 'EOF' > app/src/main/res/layout/item_app_tile.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="8dp">
-              <FrameLayout android:id="@+id/appCardView" android:layout_width="142dp" android:layout_height="80dp" android:layout_gravity="center" android:clickable="true" android:focusable="true">
-                  <ImageView android:id="@+id/appCardArtwork" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
-                  <View android:id="@+id/focusBorder" android:layout_width="match_parent" android:layout_height="match_parent" />
-              </FrameLayout>
+          <androidx.recyclerview.widget.RecyclerView android:id="@+id/appsGrid"
+              android:layout_width="0dp" android:layout_height="0dp" android:layout_marginTop="24dp"
+              android:paddingStart="80dp" android:paddingEnd="80dp" android:paddingBottom="32dp"
+              app:layout_constraintTop_toBottomOf="@id/dockGlassBar" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
+      </androidx.constraintlayout.widget.ConstraintLayout>
+      EOF
+
+      cat << 'EOF' > app/src/main/res/layout/item_app_tile.xml
+      <?xml version="1.0" encoding="utf-8"?>
+      <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="wrap_content" android:layout_height="wrap_content" android:padding="10dp">
+          <FrameLayout android:id="@+id/appCardView" android:layout_width="155dp" android:layout_height="88dp" android:layout_gravity="center" android:clickable="true" android:focusable="true">
+              <ImageView android:id="@+id/appCardArtwork" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
+              <TextView android:id="@+id/appCardTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:layout_gravity="bottom" android:background="#99000000" android:ellipsize="end" android:maxLines="1"
+                  android:padding="4dp" android:textColor="#FFFFFF" android:textSize="12sp" android:gravity="center" />
           </FrameLayout>
-          EOF
+      </FrameLayout>
+      EOF
 
-          cat << 'EOF' > app/src/main/java/com/appletv/launcher/MainActivity.kt
-          package com.appletv.launcher
+      cat << 'EOF' > app/src/main/java/com/appletv/launcher/MainActivity.kt
+      package com.appletv.launcher
 
-          import android.content.Intent
-          import android.graphics.*
-          import android.graphics.drawable.Drawable
-          import android.graphics.drawable.GradientDrawable
-          import android.os.Bundle
-          import android.provider.Settings
-          import android.view.KeyEvent
-          import android.view.View
-          import android.view.ViewGroup
-          import androidx.appcompat.app.AppCompatActivity
-          import androidx.recyclerview.widget.GridLayoutManager
-          import androidx.recyclerview.widget.RecyclerView
+      import android.app.AlertDialog
+      import android.content.Intent
+      import android.graphics.*
+      import android.graphics.drawable.Drawable
+      import android.graphics.drawable.GradientDrawable
+      import android.os.Bundle
+      import android.provider.Settings
+      import android.view.KeyEvent
+      import android.view.View
+      import android.view.ViewGroup
+      import android.widget.ArrayAdapter
+      import android.widget.ImageView
+      import android.widget.TextView
+      import androidx.appcompat.app.AppCompatActivity
+      import androidx.recyclerview.widget.GridLayoutManager
+      import androidx.recyclerview.widget.RecyclerView
 
-          data class AppEntry(val label: String, val packageName: String, val activityName: String, val icon: Drawable, val banner: Drawable?, val brandColor: Int, val bitmap: Bitmap)
+      data class AppEntry(val label: String, val packageName: String, val icon: Drawable)
 
-          class MainActivity : AppCompatActivity() {
-              private lateinit var allApps: List<AppEntry>
+      class MainActivity : AppCompatActivity() {
+          private lateinit var allApps: List<AppEntry>
+          private var currentWallpaperIndex = 0
 
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
-                  setContentView(R.layout.activity_main)
+          private val wallpapers = arrayOf(
+              arrayOf(Color.parseColor("#141C2E"), Color.parseColor("#080B14"), Color.parseColor("#020305")), // Тёмный Космос
+              arrayOf(Color.parseColor("#0D1B2A"), Color.parseColor("#1B263B"), Color.parseColor("#415A77")), // Глубокий Синий
+              arrayOf(Color.parseColor("#111111"), Color.parseColor("#222222"), Color.parseColor("#000000"))  // Минималистичный Серый
+          )
 
-                  findViewById<View>(R.id.btnSources).setOnClickListener {
-                      try { startActivity(Intent("com.android.tv.action.VIEW_INPUTS")) } catch (_: Exception) {}
-                  }
-                  findViewById<View>(R.id.btnSettings).setOnClickListener {
-                      startActivity(Intent(Settings.ACTION_SETTINGS))
-                  }
+          override fun onCreate(savedInstanceState: Bundle?) {
+              super.onCreate(savedInstanceState)
+              setContentView(R.layout.activity_main)
 
-                  refreshApps()
+              val prefs = getSharedPreferences("LauncherPrefs", MODE_PRIVATE)
+              currentWallpaperIndex = prefs.getInt("wallpaper_idx", 0)
+
+              findViewById<View>(R.id.btnSources).setOnClickListener {
+                  try { startActivity(Intent("com.android.tv.action.VIEW_INPUTS")) } catch (_: Exception) {}
               }
 
-              override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-                  if (keyCode == 183 || keyCode == 269 || keyCode == 10001) {
-                      launchApp("youtube")
-                      return true
-                  }
-                  if (keyCode == 184 || keyCode == 270 || keyCode == 10002) {
-                      launchApp("кинопоиск")
-                      return true
-                  }
-                  return super.onKeyDown(keyCode, event)
+              findViewById<View>(R.id.btnSettings).setOnClickListener {
+                  showSettingsDialog()
               }
 
-              private fun launchApp(kw: String) {
-                  allApps.firstOrNull { it.label.lowercase().contains(kw) || it.packageName.lowercase().contains(kw) }?.let {
-                      startActivity(packageManager.getLaunchIntentForPackage(it.packageName))
+              refreshApps()
+              applyWallpaper()
+          }
+
+          private fun applyWallpaper() {
+              val colors = wallpapers[currentWallpaperIndex]
+              findViewById<View>(R.id.ambientGlowView).background = GradientDrawable(
+                  GradientDrawable.Orientation.TR_BL,
+                  colors.toIntArray()
+              )
+          }
+
+          private fun showSettingsDialog() {
+              val dialogView = layoutInflater.inflate(android.R.layout.select_dialog_item, null)
+              val options = arrayOf("Сменить тему / обои (Apple TV Style)", "Настроить кнопку «Смотрим» с пульта")
+              
+              AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+                  .setTitle("Настройки лаунчера v4.7")
+                  .setItems(options) { _, which ->
+                      if (which == 0) {
+                          currentWallpaperIndex = (currentWallpaperIndex + 1) % wallpapers.size
+                          getSharedPreferences("LauncherPrefs", MODE_PRIVATE).edit().putInt("wallpaper_idx", currentWallpaperIndex).apply()
+                          applyWallpaper()
+                      } else if (which == 1) {
+                          showButtonMappingDialog()
+                      }
                   }
+                  .show()
+          }
+
+          private fun showButtonMappingDialog() {
+              val actions = arrayOf("Включить VPN", "Открыть Wink", "Открыть YouTube", "Открыть Кинопоиск")
+              val prefs = getSharedPreferences("LauncherPrefs", MODE_PRIVATE)
+              
+              AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+                  .setTitle("Действие для кнопки «Смотрим»")
+                  .setItems(actions) { _, which ->
+                      val actionStr = when(which) {
+                          0 -> "vpn"
+                          1 -> "wink"
+                          2 -> "youtube"
+                          else -> "kinopoisk"
+                      }
+                      prefs.edit().putString("smotrim_action", actionStr).apply()
+                  }
+                  .show()
+          }
+
+          override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+              // Кнопка «Смотрим» на пульте или ее эмуляция (включая F1 / S)
+              if (keyCode == 183 || keyCode == 269 || keyCode == 10001 || keyCode == KeyEvent.KEYCODE_F1 || keyCode == KeyEvent.KEYCODE_S) {
+                  handleSmotrimButton()
+                  return true
               }
+              return super.onKeyDown(keyCode, event)
+          }
 
-              private fun refreshApps() {
-                  val pm = packageManager
-                  val list = mutableListOf<AppEntry>()
-                  val intent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
-                  for (info in pm.queryIntentActivities(intent, 0)) {
-                      val pkg = info.activityInfo.packageName
-                      if (pkg == packageName) continue
-                      val label = info.loadLabel(pm).toString()
-                      if (label.lowercase().contains("parentcontrol") || label.lowercase().contains("webview")) continue
-                      
-                      val icon = info.loadIcon(pm)
-                      val banner = info.activityInfo.loadBanner(pm) ?: info.activityInfo.applicationInfo.loadBanner(pm)
-                      val bmp = Bitmap.createBitmap(320, 180, Bitmap.Config.ARGB_8888)
-                      val canvas = Canvas(bmp)
-                      canvas.drawColor(Color.parseColor("#1C1C1E"))
-                      
-                      list.add(AppEntry(label, pkg, info.activityInfo.name, icon, banner, Color.parseColor("#2C2C2E"), bmp))
-                  }
-                  allApps = list
+          private fun handleSmotrimButton() {
+              val prefs = getSharedPreferences("LauncherPrefs", MODE_PRIVATE)
+              val action = prefs.getString("smotrim_action", "vpn")
+              if (action == "vpn") {
+                  try { startActivity(Intent("android.net.vpn.SETTINGS")) } catch (_: Exception) {}
+              } else {
+                  launchApp(action ?: "youtube")
+              }
+          }
 
-                  val ambientView = findViewById<View>(R.id.ambientGlowView)
-                  ambientView.background = GradientDrawable(
-                      GradientDrawable.Orientation.TR_BL,
-                      intArrayOf(Color.parseColor("#141C2E"), Color.parseColor("#080B14"), Color.parseColor("#020305"))
-                  )
+          private fun launchApp(kw: String) {
+              allApps.firstOrNull { it.label.lowercase().contains(kw) || it.packageName.lowercase().contains(kw) }?.let {
+                  startActivity(packageManager.getLaunchIntentForPackage(it.packageName))
+              }
+          }
 
-                  val rv = findViewById<RecyclerView>(R.id.appsGrid)
-                  rv.layoutManager = GridLayoutManager(this, 5)
-                  rv.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-                      override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = object : RecyclerView.ViewHolder(layoutInflater.inflate(R.layout.item_app_tile, parent, false)) {}
-                      override fun getItemCount() = allApps.size
-                      override fun onBindViewHolder(holder: RecyclerView.ViewHolder, pos: Int) {
-                          val app = allApps[pos]
-                          holder.itemView.findViewById<View>(R.id.appCardView).setOnClickListener {
-                              startActivity(pm.getLaunchIntentForPackage(app.packageName))
-                          }
+          private fun refreshApps() {
+              val pm = packageManager
+              val list = mutableListOf<AppEntry>()
+              val intent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
+              for (info in pm.queryIntentActivities(intent, 0)) {
+                  val pkg = info.activityInfo.packageName
+                  if (pkg == packageName) continue
+                  val label = info.loadLabel(pm).toString()
+                  if (label.lowercase().contains("parentcontrol") || label.lowercase().contains("webview")) continue
+                  list.add(AppEntry(label, pkg, info.loadIcon(pm)))
+              }
+              allApps = list
+
+              val rv = findViewById<RecyclerView>(R.id.appsGrid)
+              rv.layoutManager = GridLayoutManager(this, 5)
+              rv.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+                  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = object : RecyclerView.ViewHolder(layoutInflater.inflate(R.layout.item_app_tile, parent, false)) {}
+                  override fun getItemCount() = allApps.size
+                  override fun onBindViewHolder(holder: RecyclerView.ViewHolder, pos: Int) {
+                      val app = allApps[pos]
+                      val card = holder.itemView.findViewById<View>(R.id.appCardView)
+                      val title = holder.itemView.findViewById<TextView>(R.id.appCardTitle)
+                      val iconView = holder.itemView.findViewById<ImageView>(R.id.appCardArtwork)
+
+                      title.text = app.label
+                      iconView.setImageDrawable(app.icon)
+
+                      card.setOnClickListener {
+                          startActivity(pm.getLaunchIntentForPackage(app.packageName))
+                      }
+                      card.setOnFocusChangeListener { _, hasFocus ->
+                          card.animate().scaleX(if (hasFocus) 1.1f else 1.0f).scaleY(if (hasFocus) 1.1f else 1.0f).setDuration(200).start()
                       }
                   }
               }
           }
-          EOF
+      }
+      EOF
 
-          gradle wrapper --gradle-version 8.2 --distribution-type bin
-          chmod +x gradlew
+      gradle wrapper --gradle-version 8.2 --distribution-type bin
+      chmod +x gradlew
 
-      - name: Compile Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+  - name: Compile Debug APK
+    run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload Finished APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: AppleTV-Vibe-Launcher-v4.6
-          path: app/build/outputs/apk/debug/app-debug.apk
+  - name: Upload Finished APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: AppleTV-Vibe-Launcher-v4.7
+      path: app/build/outputs/apk/debug/app-debug.apk
