@@ -1,0 +1,648 @@
+name: Build Apple tvOS Launcher
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-tvos-launcher:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Zulu JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Generate tvOS Launcher Source Code
+        run: |
+          mkdir -p app/src/main/java/com/appletv/launcher
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/drawable
+
+          # 1. settings.gradle
+          cat << 'EOF' > settings.gradle
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "AppleTvLauncher"
+          include ':app'
+          EOF
+
+          # 2. Root build.gradle
+          cat << 'EOF' > build.gradle
+          plugins {
+              id 'com.android.application' version '8.1.0' apply false
+              id 'org.jetbrains.kotlin.android' version '1.8.22' apply false
+          }
+          EOF
+
+          # 3. app/build.gradle
+          cat << 'EOF' > app/build.gradle
+          plugins {
+              id 'com.android.application'
+              id 'org.jetbrains.kotlin.android'
+          }
+
+          android {
+              namespace 'com.appletv.launcher'
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId "com.appletv.launcher"
+                  minSdk 26
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0.0"
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+              kotlinOptions {
+                  jvmTarget = '17'
+              }
+          }
+
+          dependencies {
+              implementation 'androidx.core:core-ktx:1.12.0'
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+              implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+              implementation 'androidx.recyclerview:recyclerview:1.3.2'
+              implementation 'androidx.cardview:cardview:1.0.0'
+          }
+          EOF
+
+          # 4. AndroidManifest.xml
+          cat << 'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+              <uses-feature android:name="android.software.leanback" android:required="false" />
+              <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+              <application
+                  android:allowBackup="true"
+                  android:icon="@drawable/ic_tvos_logo"
+                  android:banner="@drawable/ic_tvos_logo"
+                  android:label="Apple TV"
+                  android:theme="@style/Theme.AppleTv">
+                  
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:launchMode="singleTask"
+                      android:screenOrientation="landscape">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.HOME" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          # 5. Стили и палитра Apple tvOS
+          cat << 'EOF' > app/src/main/res/values/colors.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="tvos_bg_dark">#0F1015</color>
+              <color name="tvos_card_normal">#1E222D</color>
+              <color name="tvos_card_stroke">#303646</color>
+              <color name="tvos_focus_stroke">#FFFFFF</color>
+              <color name="tvos_text_primary">#F5F6F8</color>
+              <color name="tvos_text_secondary">#8E92A0</color>
+              <color name="tvos_accent_blue">#0A84FF</color>
+          </resources>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/values/themes.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="Theme.AppleTv" parent="Theme.MaterialComponents.NoActionBar">
+                  <item name="android:windowBackground">@color/tvos_bg_dark</item>
+                  <item name="android:windowNoTitle">true</item>
+                  <item name="android:windowFullscreen">true</item>
+                  <item name="android:navigationBarColor">@android:color/transparent</item>
+                  <item name="android:statusBarColor">@android:color/transparent</item>
+              </style>
+          </resources>
+          EOF
+
+          # 6. Графические ресурсы и селекторы
+          cat << 'EOF' > app/src/main/res/drawable/bg_tvos_gradient.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <gradient
+                  android:angle="270"
+                  android:startColor="#141722"
+                  android:endColor="#0A0B0E"
+                  android:type="linear" />
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/card_glass_shelf.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="rectangle">
+              <corners android:radius="18dp" />
+              <solid android:color="@color/tvos_card_normal" />
+              <stroke android:width="1.5dp" android:color="@color/tvos_card_stroke" />
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/app_tile_background.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="rectangle">
+              <corners android:radius="22dp" />
+              <solid android:color="#242938" />
+              <stroke android:width="1dp" android:color="#363E52" />
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/ic_tvos_logo.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="48dp"
+              android:height="48dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M21,3H3C1.9,3 1,3.9 1,5v12c0,1.1 0.9,2 2,2h5v2h8v-2h5c1.1,0 2,-0.9 2,-2V5C23,3.9 22.1,3 21,3zM21,17H3V5h18V17z"/>
+          </vector>
+          EOF
+
+          # 7. Разметка главного экрана (activity_main.xml)
+          cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="@drawable/bg_tvos_gradient"
+              android:paddingStart="42dp"
+              android:paddingEnd="42dp"
+              android:paddingTop="28dp"
+              android:paddingBottom="24dp">
+
+              <!-- tvOS Верхняя панель: статус и часы -->
+              <LinearLayout
+                  android:id="@+id/headerBar"
+                  android:layout_width="0dp"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:gravity="center_vertical"
+                  app:layout_constraintTop_toTopOf="parent"
+                  app:layout_constraintStart_toStartOf="parent"
+                  app:layout_constraintEnd_toEndOf="parent">
+
+                  <TextView
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="tvOS"
+                      android:textColor="@color/tvos_text_primary"
+                      android:textSize="22sp"
+                      android:textStyle="bold"
+                      android:letterSpacing="0.05" />
+
+                  <View
+                      android:layout_width="0dp"
+                      android:layout_height="1dp"
+                      android:layout_weight="1" />
+
+                  <TextClock
+                      android:id="@+id/tvosClock"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:format24Hour="HH:mm"
+                      android:format12Hour="hh:mm a"
+                      android:textColor="@color/tvos_text_primary"
+                      android:textSize="22sp"
+                      android:textStyle="bold" />
+              </LinearLayout>
+
+              <!-- tvOS Top Shelf (Виджеты быстрого действия) -->
+              <HorizontalScrollView
+                  android:id="@+id/topShelfScroll"
+                  android:layout_width="0dp"
+                  android:layout_height="130dp"
+                  android:layout_marginTop="16dp"
+                  android:scrollbars="none"
+                  android:clipToPadding="false"
+                  app:layout_constraintTop_toBottomOf="@id/headerBar"
+                  app:layout_constraintStart_toStartOf="parent"
+                  app:layout_constraintEnd_toEndOf="parent">
+
+                  <LinearLayout
+                      android:id="@+id/topShelfContainer"
+                      android:layout_width="wrap_content"
+                      android:layout_height="match_parent"
+                      android:orientation="horizontal"
+                      android:gravity="center_vertical">
+
+                      <!-- Кнопка 1: VPN Центр -->
+                      <LinearLayout
+                          android:id="@+id/cardVpn"
+                          android:layout_width="220dp"
+                          android:layout_height="100dp"
+                          android:layout_marginEnd="20dp"
+                          android:background="@drawable/card_glass_shelf"
+                          android:orientation="vertical"
+                          android:gravity="center"
+                          android:focusable="true"
+                          android:clickable="true">
+
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="🛡️ VPN"
+                              android:textColor="@color/tvos_text_primary"
+                              android:textSize="18sp"
+                              android:textStyle="bold" />
+
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:layout_marginTop="4dp"
+                              android:text="Безопасное соединение"
+                              android:textColor="@color/tvos_text_secondary"
+                              android:textSize="12sp" />
+                      </LinearLayout>
+
+                      <!-- Кнопка 2: ИИ-Ассистент -->
+                      <LinearLayout
+                          android:id="@+id/cardAi"
+                          android:layout_width="220dp"
+                          android:layout_height="100dp"
+                          android:layout_marginEnd="20dp"
+                          android:background="@drawable/card_glass_shelf"
+                          android:orientation="vertical"
+                          android:gravity="center"
+                          android:focusable="true"
+                          android:clickable="true">
+
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="✨ AI Помощник"
+                              android:textColor="@color/tvos_text_primary"
+                              android:textSize="18sp"
+                              android:textStyle="bold" />
+
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:layout_marginTop="4dp"
+                              android:text="Голосовой поиск"
+                              android:textColor="@color/tvos_text_secondary"
+                              android:textSize="12sp" />
+                      </LinearLayout>
+
+                      <!-- Кнопка 3: Параметры системы -->
+                      <LinearLayout
+                          android:id="@+id/cardSettings"
+                          android:layout_width="220dp"
+                          android:layout_height="100dp"
+                          android:background="@drawable/card_glass_shelf"
+                          android:orientation="vertical"
+                          android:gravity="center"
+                          android:focusable="true"
+                          android:clickable="true">
+
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="⚙️ Настройки"
+                              android:textColor="@color/tvos_text_primary"
+                              android:textSize="18sp"
+                              android:textStyle="bold" />
+
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:layout_marginTop="4dp"
+                              android:text="Система и устройства"
+                              android:textColor="@color/tvos_text_secondary"
+                              android:textSize="12sp" />
+                      </LinearLayout>
+                  </LinearLayout>
+              </HorizontalScrollView>
+
+              <!-- Сетка приложений tvOS -->
+              <androidx.recyclerview.widget.RecyclerView
+                  android:id="@+id/appsGrid"
+                  android:layout_width="0dp"
+                  android:layout_height="0dp"
+                  android:layout_marginTop="16dp"
+                  android:clipToPadding="false"
+                  app:layout_constraintTop_toBottomOf="@id/topShelfScroll"
+                  app:layout_constraintBottom_toBottomOf="parent"
+                  app:layout_constraintStart_toStartOf="parent"
+                  app:layout_constraintEnd_toEndOf="parent" />
+
+          </androidx.constraintlayout.widget.ConstraintLayout>
+          EOF
+
+          # 8. Разметка элемента приложения (item_app_tile.xml)
+          cat << 'EOF' > app/src/main/res/layout/item_app_tile.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:gravity="center"
+              android:orientation="vertical"
+              android:padding="8dp">
+
+              <androidx.cardview.widget.CardView
+                  android:id="@+id/appCardView"
+                  android:layout_width="140dp"
+                  android:layout_height="140dp"
+                  android:clickable="true"
+                  android:focusable="true"
+                  android:foreground="?attr/selectableItemBackground">
+
+                  <LinearLayout
+                      android:id="@+id/appInnerLayout"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent"
+                      android:background="@drawable/app_tile_background"
+                      android:gravity="center"
+                      android:orientation="vertical">
+
+                      <ImageView
+                          android:id="@+id/appIcon"
+                          android:layout_width="60dp"
+                          android:layout_height="60dp"
+                          android:contentDescription="App Icon" />
+                  </LinearLayout>
+              </androidx.cardview.widget.CardView>
+
+              <TextView
+                  android:id="@+id/appLabel"
+                  android:layout_width="140dp"
+                  android:layout_height="wrap_content"
+                  android:layout_marginTop="8dp"
+                  android:ellipsize="end"
+                  android:gravity="center"
+                  android:maxLines="1"
+                  android:textColor="@color/tvos_text_primary"
+                  android:textSize="13sp"
+                  android:textStyle="normal" />
+          </LinearLayout>
+          EOF
+
+          # 9. AppAdapter.kt (С фокус-анимацией Apple TV)
+          cat << 'EOF' > app/src/main/java/com/appletv/launcher/AppAdapter.kt
+          package com.appletv.launcher
+
+          import android.content.Context
+          import android.graphics.drawable.Drawable
+          import android.view.LayoutInflater
+          import android.view.View
+          import android.view.ViewGroup
+          import android.view.animation.DecelerateInterpolator
+          import android.widget.ImageView
+          import android.widget.TextView
+          import androidx.recyclerview.widget.RecyclerView
+
+          data class AppEntry(val label: String, val packageName: String, val icon: Drawable)
+
+          class AppAdapter(
+              private val context: Context,
+              private val items: List<AppEntry>,
+              private val onLaunch: (String) -> Unit
+          ) : RecyclerView.Adapter<AppAdapter.ViewHolder>() {
+
+              class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+                  val card: View = view.findViewById(R.id.appCardView)
+                  val icon: ImageView = view.findViewById(R.id.appIcon)
+                  val title: TextView = view.findViewById(R.id.appLabel)
+              }
+
+              override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+                  val v = LayoutInflater.from(context).inflate(R.layout.item_app_tile, parent, false)
+                  return ViewHolder(v)
+              }
+
+              override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+                  val app = items[position]
+                  holder.title.text = app.label
+                  holder.icon.setImageDrawable(app.icon)
+
+                  // Эффект парящей иконки Apple TV при наведении пульта
+                  holder.card.setOnFocusChangeListener { v, hasFocus ->
+                      val scale = if (hasFocus) 1.15f else 1.0f
+                      val elevation = if (hasFocus) 16f else 0f
+                      v.animate()
+                          .scaleX(scale)
+                          .scaleY(scale)
+                          .translationZ(elevation)
+                          .setDuration(160)
+                          .setInterpolator(DecelerateInterpolator())
+                          .start()
+                  }
+
+                  holder.card.setOnClickListener {
+                      onLaunch(app.packageName)
+                  }
+              }
+
+              override fun getItemCount(): Int = items.size
+          }
+          EOF
+
+          # 10. MainActivity.kt (Логика опроса пакетов, пульта и запуска)
+          cat << 'EOF' > app/src/main/java/com/appletv/launcher/MainActivity.kt
+          package com.appletv.launcher
+
+          import android.content.Intent
+          import android.os.Bundle
+          import android.provider.Settings
+          import android.view.View
+          import android.view.animation.DecelerateInterpolator
+          import android.widget.Toast
+          import androidx.appcompat.app.AppCompatActivity
+          import androidx.recyclerview.widget.GridLayoutManager
+          import androidx.recyclerview.widget.RecyclerView
+
+          class MainActivity : AppCompatActivity() {
+
+              private val vpnKnownPackages = listOf(
+                  "org.outline.android.client",
+                  "com.v2ray.ang",
+                  "com.wireguard.android",
+                  "de.blinkt.openvpn",
+                  "com.github.dawndiy.badvpn",
+                  "com.freevpnplanet"
+              )
+
+              private val aiKnownPackages = listOf(
+                  "ru.sberdevices.salute",
+                  "ru.yandex.searchplugin",
+                  "com.google.android.katniss"
+              )
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_main)
+
+                  setupTopShelf()
+                  loadInstalledApps()
+              }
+
+              private fun setupTopShelf() {
+                  val cardVpn = findViewById<View>(R.id.cardVpn)
+                  val cardAi = findViewById<View>(R.id.cardAi)
+                  val cardSettings = findViewById<View>(R.id.cardSettings)
+
+                  val focusAnimator = View.OnFocusChangeListener { v, hasFocus ->
+                      val scale = if (hasFocus) 1.10f else 1.0f
+                      val elevation = if (hasFocus) 14f else 0f
+                      v.animate()
+                          .scaleX(scale)
+                          .scaleY(scale)
+                          .translationZ(elevation)
+                          .setDuration(150)
+                          .setInterpolator(DecelerateInterpolator())
+                          .start()
+                  }
+
+                  listOf(cardVpn, cardAi, cardSettings).forEach {
+                      it.onFocusChangeListener = focusAnimator
+                  }
+
+                  // Логика кнопки 1: VPN
+                  cardVpn.setOnClickListener {
+                      var launched = false
+                      for (pkg in vpnKnownPackages) {
+                          val intent = packageManager.getLaunchIntentForPackage(pkg)
+                          if (intent != null) {
+                              startActivity(intent)
+                              launched = true
+                              break
+                          }
+                      }
+                      if (!launched) {
+                          try {
+                              startActivity(Intent("android.net.vpn.SETTINGS"))
+                          } catch (e: Exception) {
+                              startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
+                          }
+                      }
+                  }
+
+                  // Логика кнопки 2: AI Помощник
+                  cardAi.setOnClickListener {
+                      var launched = false
+                      for (pkg in aiKnownPackages) {
+                          val intent = packageManager.getLaunchIntentForPackage(pkg)
+                          if (intent != null) {
+                              startActivity(intent)
+                              launched = true
+                              break
+                          }
+                      }
+                      if (!launched) {
+                          val voiceIntent = Intent(Intent.ACTION_VOICE_COMMAND)
+                          if (voiceIntent.resolveActivity(packageManager) != null) {
+                              startActivity(voiceIntent)
+                          } else {
+                              Toast.makeText(this, "Ассистент не найден", Toast.LENGTH_SHORT).show()
+                          }
+                      }
+                  }
+
+                  // Настройки
+                  cardSettings.setOnClickListener {
+                      startActivity(Intent(Settings.ACTION_SETTINGS))
+                  }
+              }
+
+              private fun loadInstalledApps() {
+                  val rv = findViewById<RecyclerView>(R.id.appsGrid)
+                  rv.layoutManager = GridLayoutManager(this, 5)
+
+                  val pm = packageManager
+                  val apps = mutableListOf<AppEntry>()
+                  val registeredPackages = HashSet<String>()
+                  registeredPackages.add(packageName)
+
+                  val leanbackIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                      addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
+                  }
+                  val normalIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                      addCategory(Intent.CATEGORY_LAUNCHER)
+                  }
+
+                  val activities = pm.queryIntentActivities(leanbackIntent, 0) + pm.queryIntentActivities(normalIntent, 0)
+
+                  for (info in activities) {
+                      val pkg = info.activityInfo.packageName
+                      if (!registeredPackages.contains(pkg)) {
+                          registeredPackages.add(pkg)
+                          apps.add(
+                              AppEntry(
+                                  label = info.loadLabel(pm).toString(),
+                                  packageName = pkg,
+                                  icon = info.loadIcon(pm)
+                              )
+                          )
+                      }
+                  }
+
+                  apps.sortBy { it.label.lowercase() }
+
+                  rv.adapter = AppAdapter(this, apps) { targetPackage ->
+                      val launchIntent = pm.getLaunchIntentForPackage(targetPackage)
+                      if (launchIntent != null) {
+                          startActivity(launchIntent)
+                      }
+                  }
+              }
+          }
+          EOF
+
+      - name: Initialize Gradle 8.2 Wrapper
+        run: |
+          gradle wrapper --gradle-version 8.2
+          chmod +x gradlew
+
+      - name: Compile Debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload Finished APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppleTV-Launcher-Debug
+          path: app/build/outputs/apk/debug/app-debug.apk
