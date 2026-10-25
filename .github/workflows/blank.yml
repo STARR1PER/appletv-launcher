@@ -19,19 +19,16 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      # 1. Принятие лицензий SDK
       - name: Accept Android SDK Licenses
         run: yes | sdkmanager --licenses || true
 
-      # 2. Инициализация чистого Gradle Wrapper 8.2
       - name: Initialize Gradle 8.2 Wrapper
         run: |
           touch settings.gradle
           gradle wrapper --gradle-version 8.2
           chmod +x gradlew
 
-      # 3. Генерация структуры и исходного кода
-      - name: Generate tvOS Launcher Source Code
+      - name: Generate Apple VibeTV Source Code
         run: |
           mkdir -p app/src/main/java/com/appletv/launcher
           mkdir -p app/src/main/res/layout
@@ -72,7 +69,7 @@ jobs:
           }
           EOF
 
-          # app/build.gradle (только необходимые стабильные зависимости)
+          # app/build.gradle
           cat << 'EOF' > app/build.gradle
           plugins {
               id 'com.android.application'
@@ -87,8 +84,8 @@ jobs:
                   applicationId "com.appletv.launcher"
                   minSdk 26
                   targetSdk 34
-                  versionCode 1
-                  versionName "1.0.0"
+                  versionCode 3
+                  versionName "3.0.0"
               }
 
               buildTypes {
@@ -151,11 +148,12 @@ jobs:
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <color name="tvos_bg_dark">#0F1015</color>
-              <color name="tvos_card_normal">#1E222D</color>
-              <color name="tvos_card_stroke">#303646</color>
-              <color name="tvos_text_primary">#F5F6F8</color>
-              <color name="tvos_text_secondary">#8E92A0</color>
+              <color name="tvos_bg_dark">#06070B</color>
+              <color name="tvos_text_primary">#FFFFFF</color>
+              <color name="tvos_text_secondary">#A6AEB9</color>
+              <color name="tvos_dock_glass">#1AFFFFFF</color>
+              <color name="tvos_dock_stroke">#33FFFFFF</color>
+              <color name="tvos_pill_bg">#1FFFFFFF</color>
           </resources>
           EOF
 
@@ -174,32 +172,21 @@ jobs:
           EOF
 
           # drawables
-          cat << 'EOF' > app/src/main/res/drawable/bg_tvos_gradient.xml
+          cat << 'EOF' > app/src/main/res/drawable/bg_dock_glass.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <gradient
-                  android:angle="270"
-                  android:startColor="#141722"
-                  android:endColor="#0A0B0E"
-                  android:type="linear" />
+              <corners android:radius="26dp" />
+              <solid android:color="@color/tvos_dock_glass" />
+              <stroke android:width="1dp" android:color="@color/tvos_dock_stroke" />
           </shape>
           EOF
 
-          cat << 'EOF' > app/src/main/res/drawable/card_glass_shelf.xml
+          cat << 'EOF' > app/src/main/res/drawable/bg_top_pill.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="18dp" />
-              <solid android:color="@color/tvos_card_normal" />
-              <stroke android:width="1.5dp" android:color="@color/tvos_card_stroke" />
-          </shape>
-          EOF
-
-          cat << 'EOF' > app/src/main/res/drawable/app_tile_background.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <corners android:radius="22dp" />
-              <solid android:color="#242938" />
-              <stroke android:width="1dp" android:color="#363E52" />
+              <corners android:radius="50dp" />
+              <solid android:color="@color/tvos_pill_bg" />
+              <stroke android:width="1dp" android:color="#36FFFFFF" />
           </shape>
           EOF
 
@@ -216,164 +203,250 @@ jobs:
           </vector>
           EOF
 
-          # layout/activity_main.xml
+          # layout/activity_main.xml (Точная компоновка VibeTV из ролика + стеклянный Док Apple TV)
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:id="@+id/rootLayout"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:background="@drawable/bg_tvos_gradient"
-              android:paddingStart="42dp"
-              android:paddingEnd="42dp"
-              android:paddingTop="28dp"
-              android:paddingBottom="24dp">
+              android:background="@color/tvos_bg_dark"
+              android:clipChildren="false"
+              android:clipToPadding="false">
 
+              <!-- Плавное атмосферное свечение на весь экран в цвет активной карточки -->
+              <View
+                  android:id="@+id/ambientGlowView"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent" />
+
+              <!-- Верхняя шапка: слева приветствие, часы и дата; справа капсулы Источники, VPN, AirPlay, Настройки -->
               <LinearLayout
-                  android:id="@+id/headerBar"
+                  android:id="@+id/topHeader"
                   android:layout_width="0dp"
                   android:layout_height="wrap_content"
-                  android:orientation="horizontal"
+                  android:layout_marginStart="54dp"
+                  android:layout_marginEnd="54dp"
+                  android:layout_marginTop="34dp"
                   android:gravity="center_vertical"
+                  android:orientation="horizontal"
+                  android:clipChildren="false"
                   app:layout_constraintTop_toTopOf="parent"
                   app:layout_constraintStart_toStartOf="parent"
                   app:layout_constraintEnd_toEndOf="parent">
 
-                  <TextView
+                  <!-- Левый блок: Приветствие + Крупные часы + День недели и дата -->
+                  <LinearLayout
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
-                      android:text="tvOS"
-                      android:textColor="@color/tvos_text_primary"
-                      android:textSize="22sp"
-                      android:textStyle="bold"
-                      android:letterSpacing="0.05" />
+                      android:orientation="vertical">
+
+                      <TextView
+                          android:id="@+id/tvGreeting"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text=" TV  •  ДОБРЫЙ ВЕЧЕР"
+                          android:textColor="#A8FFFFFF"
+                          android:textSize="11sp"
+                          android:textStyle="bold"
+                          android:letterSpacing="0.14" />
+
+                      <LinearLayout
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_marginTop="2dp"
+                          android:gravity="center_vertical"
+                          android:orientation="horizontal">
+
+                          <TextClock
+                              android:id="@+id/tvClock"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:format24Hour="HH:mm"
+                              android:format12Hour="HH:mm"
+                              android:textColor="@color/tvos_text_primary"
+                              android:textSize="42sp"
+                              android:fontFamily="sans-serif-light" />
+
+                          <TextView
+                              android:id="@+id/tvDateTwoLine"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:layout_marginStart="16dp"
+                              android:lineSpacingExtra="2dp"
+                              android:text="ВОСКРЕСЕНЬЕ\n25 ОКТЯБРЯ"
+                              android:textColor="#CCFFFFFF"
+                              android:textSize="11sp"
+                              android:textStyle="bold"
+                              android:letterSpacing="0.06" />
+                      </LinearLayout>
+                  </LinearLayout>
 
                   <View
                       android:layout_width="0dp"
                       android:layout_height="1dp"
                       android:layout_weight="1" />
 
-                  <TextClock
-                      android:id="@+id/tvosClock"
+                  <!-- Правый блок кнопок как в видео: Источники, VPN (Happ), AirPlay (AirScreen), Скрытые, Настройки -->
+                  <LinearLayout
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
-                      android:format24Hour="HH:mm"
-                      android:format12Hour="hh:mm a"
-                      android:textColor="@color/tvos_text_primary"
-                      android:textSize="22sp"
-                      android:textStyle="bold" />
+                      android:gravity="center_vertical"
+                      android:orientation="horizontal"
+                      android:clipChildren="false">
+
+                      <TextView
+                          android:id="@+id/btnSources"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginEnd="12dp"
+                          android:background="@drawable/bg_top_pill"
+                          android:clickable="true"
+                          android:focusable="true"
+                          android:gravity="center"
+                          android:paddingStart="18dp"
+                          android:paddingEnd="18dp"
+                          android:text="📺  Источники"
+                          android:textColor="@color/tvos_text_primary"
+                          android:textSize="13sp"
+                          android:textStyle="bold" />
+
+                      <TextView
+                          android:id="@+id/btnVpn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginEnd="12dp"
+                          android:background="@drawable/bg_top_pill"
+                          android:clickable="true"
+                          android:focusable="true"
+                          android:gravity="center"
+                          android:paddingStart="18dp"
+                          android:paddingEnd="18dp"
+                          android:text="🛡️  VPN"
+                          android:textColor="@color/tvos_text_primary"
+                          android:textSize="13sp"
+                          android:textStyle="bold" />
+
+                      <TextView
+                          android:id="@+id/btnAirPlay"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginEnd="12dp"
+                          android:background="@drawable/bg_top_pill"
+                          android:clickable="true"
+                          android:focusable="true"
+                          android:gravity="center"
+                          android:paddingStart="18dp"
+                          android:paddingEnd="18dp"
+                          android:text="📡  AirPlay"
+                          android:textColor="@color/tvos_text_primary"
+                          android:textSize="13sp"
+                          android:textStyle="bold" />
+
+                      <TextView
+                          android:id="@+id/btnHidden"
+                          android:layout_width="40dp"
+                          android:layout_height="40dp"
+                          android:layout_marginEnd="12dp"
+                          android:background="@drawable/bg_top_pill"
+                          android:clickable="true"
+                          android:focusable="true"
+                          android:gravity="center"
+                          android:text="👁"
+                          android:textColor="@color/tvos_text_primary"
+                          android:textSize="15sp" />
+
+                      <TextView
+                          android:id="@+id/btnSettings"
+                          android:layout_width="40dp"
+                          android:layout_height="40dp"
+                          android:background="@drawable/bg_top_pill"
+                          android:clickable="true"
+                          android:focusable="true"
+                          android:gravity="center"
+                          android:text="⚙"
+                          android:textColor="@color/tvos_text_primary"
+                          android:textSize="17sp" />
+                  </LinearLayout>
               </LinearLayout>
 
-              <HorizontalScrollView
-                  android:id="@+id/topShelfScroll"
+              <!-- Крупное название выбранного приложения прямо над карточками (как в видео) -->
+              <LinearLayout
+                  android:id="@+id/focusedTitleBlock"
                   android:layout_width="0dp"
-                  android:layout_height="130dp"
-                  android:layout_marginTop="16dp"
-                  android:scrollbars="none"
-                  android:clipToPadding="false"
-                  app:layout_constraintTop_toBottomOf="@id/headerBar"
+                  android:layout_height="wrap_content"
+                  android:layout_marginStart="56dp"
+                  android:layout_marginEnd="56dp"
+                  android:layout_marginTop="42dp"
+                  android:orientation="vertical"
+                  app:layout_constraintTop_toBottomOf="@id/topHeader"
                   app:layout_constraintStart_toStartOf="parent"
                   app:layout_constraintEnd_toEndOf="parent">
 
-                  <LinearLayout
-                      android:id="@+id/topShelfContainer"
+                  <TextView
+                      android:id="@+id/tvFocusedAppTitle"
                       android:layout_width="wrap_content"
-                      android:layout_height="match_parent"
-                      android:orientation="horizontal"
-                      android:gravity="center_vertical">
+                      android:layout_height="wrap_content"
+                      android:text="YouTube"
+                      android:textColor="@color/tvos_text_primary"
+                      android:textSize="36sp"
+                      android:textStyle="bold"
+                      android:letterSpacing="-0.01"
+                      android:shadowColor="#99000000"
+                      android:shadowDx="0"
+                      android:shadowDy="4"
+                      android:shadowRadius="12" />
 
-                      <LinearLayout
-                          android:id="@+id/cardVpn"
-                          android:layout_width="220dp"
-                          android:layout_height="100dp"
-                          android:layout_marginEnd="20dp"
-                          android:background="@drawable/card_glass_shelf"
-                          android:orientation="vertical"
-                          android:gravity="center"
-                          android:focusable="true"
-                          android:clickable="true">
+                  <TextView
+                      android:id="@+id/tvFocusedAppHint"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:layout_marginTop="2dp"
+                      android:text="Apple TV Dock  •  Удерживайте ОК для настройки карточки"
+                      android:textColor="#99FFFFFF"
+                      android:textSize="12sp" />
+              </LinearLayout>
 
-                          <TextView
-                              android:layout_width="wrap_content"
-                              android:layout_height="wrap_content"
-                              android:text="🛡️ VPN"
-                              android:textColor="@color/tvos_text_primary"
-                              android:textSize="18sp"
-                              android:textStyle="bold" />
+              <!-- Стеклянный Док Apple TV (верхний ряд из 6 главных карточек 16:9) -->
+              <LinearLayout
+                  android:id="@+id/dockGlassBar"
+                  android:layout_width="0dp"
+                  android:layout_height="112dp"
+                  android:layout_marginStart="46dp"
+                  android:layout_marginEnd="46dp"
+                  android:layout_marginTop="14dp"
+                  android:background="@drawable/bg_dock_glass"
+                  android:paddingStart="12dp"
+                  android:paddingEnd="12dp"
+                  android:gravity="center_vertical"
+                  android:clipChildren="false"
+                  android:clipToPadding="false"
+                  app:layout_constraintTop_toBottomOf="@id/focusedTitleBlock"
+                  app:layout_constraintStart_toStartOf="parent"
+                  app:layout_constraintEnd_toEndOf="parent">
 
-                          <TextView
-                              android:layout_width="wrap_content"
-                              android:layout_height="wrap_content"
-                              android:layout_marginTop="4dp"
-                              android:text="Безопасное соединение"
-                              android:textColor="@color/tvos_text_secondary"
-                              android:textSize="12sp" />
-                      </LinearLayout>
+                  <androidx.recyclerview.widget.RecyclerView
+                      android:id="@+id/dockRecycler"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:clipChildren="false"
+                      android:clipToPadding="false" />
+              </LinearLayout>
 
-                      <LinearLayout
-                          android:id="@+id/cardAi"
-                          android:layout_width="220dp"
-                          android:layout_height="100dp"
-                          android:layout_marginEnd="20dp"
-                          android:background="@drawable/card_glass_shelf"
-                          android:orientation="vertical"
-                          android:gravity="center"
-                          android:focusable="true"
-                          android:clickable="true">
-
-                          <TextView
-                              android:layout_width="wrap_content"
-                              android:layout_height="wrap_content"
-                              android:text="✨ AI Помощник"
-                              android:textColor="@color/tvos_text_primary"
-                              android:textSize="18sp"
-                              android:textStyle="bold" />
-
-                          <TextView
-                              android:layout_width="wrap_content"
-                              android:layout_height="wrap_content"
-                              android:layout_marginTop="4dp"
-                              android:text="Голосовой поиск"
-                              android:textColor="@color/tvos_text_secondary"
-                              android:textSize="12sp" />
-                      </LinearLayout>
-
-                      <LinearLayout
-                          android:id="@+id/cardSettings"
-                          android:layout_width="220dp"
-                          android:layout_height="100dp"
-                          android:background="@drawable/card_glass_shelf"
-                          android:orientation="vertical"
-                          android:gravity="center"
-                          android:focusable="true"
-                          android:clickable="true">
-
-                          <TextView
-                              android:layout_width="wrap_content"
-                              android:layout_height="wrap_content"
-                              android:text="⚙️ Настройки"
-                              android:textColor="@color/tvos_text_primary"
-                              android:textSize="18sp"
-                              android:textStyle="bold" />
-
-                          <TextView
-                              android:layout_width="wrap_content"
-                              android:layout_height="wrap_content"
-                              android:layout_marginTop="4dp"
-                              android:text="Система и устройства"
-                              android:textColor="@color/tvos_text_secondary"
-                              android:textSize="12sp" />
-                      </LinearLayout>
-                  </LinearLayout>
-              </HorizontalScrollView>
-
+              <!-- Нижняя сетка остальных приложений (6 колонок 16:9 без мусорных подписей) -->
               <androidx.recyclerview.widget.RecyclerView
                   android:id="@+id/appsGrid"
                   android:layout_width="0dp"
                   android:layout_height="0dp"
-                  android:layout_marginTop="16dp"
+                  android:layout_marginTop="10dp"
+                  android:paddingStart="58dp"
+                  android:paddingEnd="58dp"
+                  android:paddingTop="8dp"
+                  android:paddingBottom="24dp"
+                  android:clipChildren="false"
                   android:clipToPadding="false"
-                  app:layout_constraintTop_toBottomOf="@id/topShelfScroll"
+                  app:layout_constraintTop_toBottomOf="@id/dockGlassBar"
                   app:layout_constraintBottom_toBottomOf="parent"
                   app:layout_constraintStart_toStartOf="parent"
                   app:layout_constraintEnd_toEndOf="parent" />
@@ -381,71 +454,87 @@ jobs:
           </androidx.constraintlayout.widget.ConstraintLayout>
           EOF
 
-          # layout/item_app_tile.xml
+          # layout/item_app_tile.xml (Чистая широкоформатная карточка 16:9 без текста снизу, как в видео)
           cat << 'EOF' > app/src/main/res/layout/item_app_tile.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
-              android:gravity="center"
-              android:orientation="vertical"
-              android:padding="8dp">
+              android:padding="7dp"
+              android:clipChildren="false"
+              android:clipToPadding="false">
 
               <FrameLayout
                   android:id="@+id/appCardView"
-                  android:layout_width="140dp"
-                  android:layout_height="140dp"
-                  android:background="@drawable/app_tile_background"
+                  android:layout_width="138dp"
+                  android:layout_height="78dp"
+                  android:layout_gravity="center"
                   android:clickable="true"
                   android:focusable="true">
 
                   <ImageView
-                      android:id="@+id/appIcon"
-                      android:layout_width="60dp"
-                      android:layout_height="60dp"
-                      android:layout_gravity="center"
-                      android:contentDescription="App Icon" />
-              </FrameLayout>
+                      android:id="@+id/appCardArtwork"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent"
+                      android:scaleType="centerCrop" />
 
-              <TextView
-                  android:id="@+id/appLabel"
-                  android:layout_width="140dp"
-                  android:layout_height="wrap_content"
-                  android:layout_marginTop="8dp"
-                  android:ellipsize="end"
-                  android:gravity="center"
-                  android:maxLines="1"
-                  android:textColor="@color/tvos_text_primary"
-                  android:textSize="13sp" />
-          </LinearLayout>
+                  <View
+                      android:id="@+id/focusBorder"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent" />
+              </FrameLayout>
+          </FrameLayout>
           EOF
 
-          # AppAdapter.kt
+          # AppAdapter.kt (Генератор фирменных 16:9 обложек Apple TV / VibeTV + 3D параллакс-фокус)
           cat << 'EOF' > app/src/main/java/com/appletv/launcher/AppAdapter.kt
           package com.appletv.launcher
 
           import android.content.Context
+          import android.graphics.Bitmap
+          import android.graphics.BitmapShader
+          import android.graphics.Canvas
+          import android.graphics.Color
+          import android.graphics.LinearGradient
+          import android.graphics.Matrix
+          import android.graphics.Paint
+          import android.graphics.RectF
+          import android.graphics.Shader
+          import android.graphics.Typeface
           import android.graphics.drawable.Drawable
+          import android.graphics.drawable.GradientDrawable
           import android.view.LayoutInflater
           import android.view.View
           import android.view.ViewGroup
+          import android.view.ViewOutlineProvider
           import android.view.animation.DecelerateInterpolator
           import android.widget.ImageView
-          import android.widget.TextView
           import androidx.recyclerview.widget.RecyclerView
 
-          data class AppEntry(val label: String, val packageName: String, val icon: Drawable)
+          data class AppEntry(
+              val label: String,
+              val packageName: String,
+              val icon: Drawable,
+              val banner: Drawable?,
+              val brandColor: Int,
+              val studioCardBitmap: Bitmap,
+              val isSystem: Boolean
+          )
 
           class AppAdapter(
               private val context: Context,
               private val items: List<AppEntry>,
-              private val onLaunch: (String) -> Unit
+              private val onFocused: (AppEntry) -> Unit,
+              private val onLaunch: (AppEntry) -> Unit,
+              private val onLongClick: (AppEntry) -> Unit
           ) : RecyclerView.Adapter<AppAdapter.ViewHolder>() {
+
+              private val density = context.resources.displayMetrics.density
 
               class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
                   val card: View = view.findViewById(R.id.appCardView)
-                  val icon: ImageView = view.findViewById(R.id.appIcon)
-                  val title: TextView = view.findViewById(R.id.appLabel)
+                  val artworkView: ImageView = view.findViewById(R.id.appCardArtwork)
+                  val focusBorder: View = view.findViewById(R.id.focusBorder)
               }
 
               override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -455,12 +544,33 @@ jobs:
 
               override fun onBindViewHolder(holder: ViewHolder, position: Int) {
                   val app = items[position]
-                  holder.title.text = app.label
-                  holder.icon.setImageDrawable(app.icon)
+                  val radiusPx = 16f * density
+
+                  val clipBg = GradientDrawable().apply {
+                      cornerRadius = radiusPx
+                      setColor(app.brandColor)
+                  }
+                  holder.card.background = clipBg
+                  holder.card.outlineProvider = ViewOutlineProvider.BACKGROUND
+                  holder.card.clipToOutline = true
+
+                  if (app.banner != null) {
+                      holder.artworkView.setImageDrawable(app.banner)
+                  } else {
+                      holder.artworkView.setImageBitmap(app.studioCardBitmap)
+                  }
+
+                  val borderDrawable = GradientDrawable().apply {
+                      cornerRadius = radiusPx
+                      setColor(Color.TRANSPARENT)
+                      setStroke((2.5f * density).toInt(), Color.WHITE)
+                  }
+                  holder.focusBorder.background = borderDrawable
+                  holder.focusBorder.alpha = 0f
 
                   holder.card.setOnFocusChangeListener { v, hasFocus ->
                       val scale = if (hasFocus) 1.15f else 1.0f
-                      val elevation = if (hasFocus) 16f else 0f
+                      val elevation = if (hasFocus) 26f else 2f
                       v.animate()
                           .scaleX(scale)
                           .scaleY(scale)
@@ -468,88 +578,255 @@ jobs:
                           .setDuration(160)
                           .setInterpolator(DecelerateInterpolator())
                           .start()
+
+                      holder.focusBorder.animate()
+                          .alpha(if (hasFocus) 1f else 0f)
+                          .setDuration(140)
+                          .start()
+
+                      if (hasFocus) {
+                          onFocused(app)
+                      }
                   }
 
                   holder.card.setOnClickListener {
-                      onLaunch(app.packageName)
+                      onLaunch(app)
+                  }
+
+                  holder.card.setOnLongClickListener {
+                      onLongClick(app)
+                      true
                   }
               }
 
               override fun getItemCount(): Int = items.size
           }
+
+          object StudioCardGenerator {
+
+              data class BrandStyle(
+                  val c1: Int,
+                  val c2: Int,
+                  val titleText: String,
+                  val textColor: Int = Color.WHITE
+              )
+
+              fun resolveBrandStyle(label: String, pkg: String, fallbackColor: Int): BrandStyle {
+                  val key = "${label.lowercase()} ${pkg.lowercase()}"
+                  return when {
+                      key.contains("youtube") -> BrandStyle(Color.parseColor("#FFFFFF"), Color.parseColor("#E8EAED"), "YouTube", Color.parseColor("#111111"))
+                      key.contains("apple") -> BrandStyle(Color.parseColor("#2C2C2E"), Color.parseColor("#141416"), "tv")
+                      key.contains("netflix") -> BrandStyle(Color.parseColor("#191919"), Color.parseColor("#080808"), "NETFLIX", Color.parseColor("#E50914"))
+                      key.contains("okko") || key.contains("окко") -> BrandStyle(Color.parseColor("#7B2CBF"), Color.parseColor("#3C096C"), "ökko")
+                      key.contains("кинопоиск") || key.contains("kinopoisk") -> BrandStyle(Color.parseColor("#1F1F24"), Color.parseColor("#0F0F12"), "КИНОПОИСК", Color.parseColor("#FF5500"))
+                      key.contains("twitch") -> BrandStyle(Color.parseColor("#9146FF"), Color.parseColor("#5C16C5"), "twitch")
+                      key.contains("spotify") -> BrandStyle(Color.parseColor("#1DB954"), Color.parseColor("#117A37"), "Spotify")
+                      key.contains("rutube") -> BrandStyle(Color.parseColor("#8A2BE2"), Color.parseColor("#005BFF"), "RUTUBE")
+                      key.contains("vk") || key.contains("вк") -> BrandStyle(Color.parseColor("#0077FF"), Color.parseColor("#0044AA"), "VK Видео")
+                      key.contains("happ") -> BrandStyle(Color.parseColor("#1E222D"), Color.parseColor("#0D1017"), "Happ")
+                      key.contains("airscreen") || key.contains("airplay") -> BrandStyle(Color.parseColor("#00B4DB"), Color.parseColor("#0083B0"), "AirPlay")
+                      key.contains("24тв") || key.contains("24tv") -> BrandStyle(Color.parseColor("#1E3C72"), Color.parseColor("#2A5298"), "24ТВ")
+                      key.contains("vlc") -> BrandStyle(Color.parseColor("#FF8008"), Color.parseColor("#CC5500"), "VLC")
+                      else -> {
+                          val hsv = FloatArray(3)
+                          Color.colorToHSV(fallbackColor, hsv)
+                          val topC = Color.HSVToColor(floatArrayOf(hsv[0], (hsv[1] * 0.9f).coerceIn(0.35f, 1f), (hsv[2] * 1.15f).coerceIn(0.30f, 0.78f)))
+                          val botC = Color.HSVToColor(floatArrayOf(hsv[0], hsv[1].coerceIn(0.4f, 1f), (hsv[2] * 0.55f).coerceIn(0.12f, 0.45f)))
+                          BrandStyle(topC, botC, label)
+                      }
+                  }
+              }
+
+              // Рисует широкоформатную карточку 16:9 (320x180) со скругленной иконкой и брендингом как в ролике
+              fun createCardBitmap(label: String, pkg: String, icon: Drawable, fallbackColor: Int): Pair<Bitmap, Int> {
+                  val width = 320
+                  val height = 180
+                  val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                  val canvas = Canvas(bmp)
+
+                  val style = resolveBrandStyle(label, pkg, fallbackColor)
+
+                  // 1. Градиентная подложка 16:9
+                  val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                      shader = LinearGradient(
+                          0f, 0f, width.toFloat(), height.toFloat(),
+                          style.c1, style.c2, Shader.TileMode.CLAMP
+                      )
+                  }
+                  canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
+
+                  // 2. Мягкий стеклянный блик Apple TV сверху
+                  val sheenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                      shader = LinearGradient(
+                          0f, 0f, 0f, height * 0.55f,
+                          Color.argb(42, 255, 255, 255),
+                          Color.argb(0, 255, 255, 255),
+                          Shader.TileMode.CLAMP
+                      )
+                  }
+                  canvas.drawRect(0f, 0f, width.toFloat(), height * 0.55f, sheenPaint)
+
+                  // 3. Рисуем иконку приложения, обрезанную в гладкий Apple Squircle (без острых углов!)
+                  val iconSize = 68
+                  val iconBmp = Bitmap.createBitmap(iconSize, iconSize, Bitmap.Config.ARGB_8888)
+                  val iconCanvas = Canvas(iconBmp)
+                  icon.setBounds(0, 0, iconSize, iconSize)
+                  icon.draw(iconCanvas)
+
+                  val shortLabel = style.titleText
+                  val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                      color = style.textColor
+                      textSize = if (shortLabel.length > 9) 24f else 28f
+                      typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+                  }
+
+                  val displayLabel = if (shortLabel.length > 12) shortLabel.take(11) + "…" else shortLabel
+                  val textWidth = textPaint.measureText(displayLabel)
+                  val gap = 16f
+                  val totalWidth = iconSize + gap + textWidth
+                  val startX = ((width - totalWidth) / 2f).coerceAtLeast(22f)
+                  val iconTop = (height - iconSize) / 2f
+
+                  val shader = BitmapShader(iconBmp, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+                  val matrix = Matrix()
+                  matrix.setTranslate(startX, iconTop)
+                  shader.setLocalMatrix(matrix)
+
+                  val squirclePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                      this.shader = shader
+                  }
+                  val rect = RectF(startX, iconTop, startX + iconSize, iconTop + iconSize)
+                  canvas.drawRoundRect(rect, 18f, 18f, squirclePaint)
+
+                  // 4. Крупное название сервиса рядом с иконкой прямо внутри 16:9 плитки (как в VibeTV из видео)
+                  val fontMetrics = textPaint.fontMetrics
+                  val textY = height / 2f - (fontMetrics.ascent + fontMetrics.descent) / 2f
+                  canvas.drawText(displayLabel, startX + iconSize + gap, textY, textPaint)
+
+                  iconBmp.recycle()
+                  val ambientColor = if (style.c1 == Color.parseColor("#FFFFFF")) Color.parseColor("#CC1A1A") else style.c1
+                  return Pair(bmp, ambientColor)
+              }
+          }
           EOF
 
-          # MainActivity.kt
+          # MainActivity.kt (Логика часов, даты, HDMI-источников, VPN Happ, AirPlay и плавной подсветки)
           cat << 'EOF' > app/src/main/java/com/appletv/launcher/MainActivity.kt
           package com.appletv.launcher
 
+          import android.animation.ArgbEvaluator
+          import android.animation.ValueAnimator
+          import android.content.Context
           import android.content.Intent
+          import android.content.pm.ApplicationInfo
+          import android.graphics.Bitmap
+          import android.graphics.Canvas
+          import android.graphics.Color
+          import android.graphics.drawable.Drawable
+          import android.graphics.drawable.GradientDrawable
           import android.os.Bundle
           import android.provider.Settings
           import android.view.View
           import android.view.animation.DecelerateInterpolator
+          import android.widget.TextView
           import android.widget.Toast
+          import androidx.appcompat.app.AlertDialog
           import androidx.appcompat.app.AppCompatActivity
           import androidx.recyclerview.widget.GridLayoutManager
           import androidx.recyclerview.widget.RecyclerView
+          import java.util.Calendar
 
           class MainActivity : AppCompatActivity() {
 
-              private val vpnKnownPackages = listOf(
-                  "org.outline.android.client",
-                  "com.v2ray.ang",
-                  "com.wireguard.android",
-                  "de.blinkt.openvpn",
-                  "com.github.dawndiy.badvpn",
-                  "com.freevpnplanet"
-              )
+              private val vpnKeywords = listOf("happ", "v2ray", "outline", "wireguard", "vpn", "nekobox", "singbox", "clash", "vless")
+              private val airPlayKeywords = listOf("airscreen", "airplay", "airpin", "cast", "miracast")
+              private val defaultHiddenKeywords = listOf("acbridge", "mhshare")
 
-              private val aiKnownPackages = listOf(
-                  "ru.sberdevices.salute",
-                  "ru.yandex.searchplugin",
-                  "com.google.android.katniss"
-              )
+              private lateinit var allApps: MutableList<AppEntry>
+              private var currentAmbientColor: Int = Color.parseColor("#182238")
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_main)
 
-                  setupTopShelf()
-                  loadInstalledApps()
+                  updateGreetingAndDate()
+                  setupTopButtons()
+                  refreshLauncherGrid()
               }
 
-              private fun setupTopShelf() {
-                  val cardVpn = findViewById<View>(R.id.cardVpn)
-                  val cardAi = findViewById<View>(R.id.cardAi)
-                  val cardSettings = findViewById<View>(R.id.cardSettings)
+              override fun onResume() {
+                  super.onResume()
+                  updateGreetingAndDate()
+                  refreshLauncherGrid()
+              }
 
-                  val focusAnimator = View.OnFocusChangeListener { v, hasFocus ->
-                      val scale = if (hasFocus) 1.10f else 1.0f
-                      val elevation = if (hasFocus) 14f else 0f
+              private fun updateGreetingAndDate() {
+                  val cal = Calendar.getInstance()
+                  val hour = cal.get(Calendar.HOUR_OF_DAY)
+                  val greeting = when (hour) {
+                      in 5..11 -> " TV  •  ДОБРОЕ УТРО"
+                      in 12..17 -> " TV  •  ДОБРЫЙ ДЕНЬ"
+                      in 18..22 -> " TV  •  ДОБРЫЙ ВЕЧЕР"
+                      else -> " TV  •  ДОБРОЙ НОЧИ"
+                  }
+                  findViewById<TextView>(R.id.tvGreeting).text = greeting
+
+                  val days = arrayOf("", "ВОСКРЕСЕНЬЕ", "ПОНЕДЕЛЬНИК", "ВТОРНИК", "СРЕДА", "ЧЕТВЕРГ", "ПЯТНИЦА", "СУББОТА")
+                  val months = arrayOf(
+                      "ЯНВАРЯ", "ФЕВРАЛЯ", "МАРТА", "АПРЕЛЯ", "МАЯ", "ИЮНЯ",
+                      "ИЮЛЯ", "АВГУСТА", "СЕНТЯБРЯ", "ОКТЯБРЯ", "НОЯБРЯ", "ДЕКАБРЯ"
+                  )
+                  val dayName = days[cal.get(Calendar.DAY_OF_WEEK)]
+                  val dayNum = cal.get(Calendar.DAY_OF_MONTH)
+                  val monthName = months[cal.get(Calendar.MONTH)]
+
+                  findViewById<TextView>(R.id.tvDateTwoLine).text = "$dayName\n$dayNum $monthName"
+              }
+
+              private fun setupTopButtons() {
+                  val btnSources = findViewById<TextView>(R.id.btnSources)
+                  val btnVpn = findViewById<TextView>(R.id.btnVpn)
+                  val btnAirPlay = findViewById<TextView>(R.id.btnAirPlay)
+                  val btnHidden = findViewById<TextView>(R.id.btnHidden)
+                  val btnSettings = findViewById<TextView>(R.id.btnSettings)
+
+                  val pillFocus = View.OnFocusChangeListener { v, hasFocus ->
+                      val scale = if (hasFocus) 1.12f else 1.0f
                       v.animate()
                           .scaleX(scale)
                           .scaleY(scale)
-                          .translationZ(elevation)
-                          .setDuration(150)
+                          .setDuration(140)
                           .setInterpolator(DecelerateInterpolator())
                           .start()
+                      v.alpha = if (hasFocus) 1.0f else 0.82f
                   }
 
-                  listOf(cardVpn, cardAi, cardSettings).forEach {
-                      it.onFocusChangeListener = focusAnimator
+                  listOf(btnSources, btnVpn, btnAirPlay, btnHidden, btnSettings).forEach {
+                      it.onFocusChangeListener = pillFocus
+                      it.alpha = 0.82f
                   }
 
-                  cardVpn.setOnClickListener {
-                      var launched = false
-                      for (pkg in vpnKnownPackages) {
-                          val intent = packageManager.getLaunchIntentForPackage(pkg)
-                          if (intent != null) {
-                              startActivity(intent)
-                              launched = true
-                              break
+                  // Кнопка "Источники" с выпадающим меню HDMI 1 / HDMI 2 / HDMI 3 / AV как в видео
+                  btnSources.setOnClickListener {
+                      val sources = arrayOf("HDMI 1", "HDMI 2", "HDMI 3", "AV / Композитный", "Все ТВ-входы системы")
+                      AlertDialog.Builder(this)
+                          .setTitle("Выберите источник сигнала")
+                          .setItems(sources) { _, _ ->
+                              openTvInputSource()
+                          }
+                          .show()
+                  }
+
+                  // Кнопка VPN — мгновенно открывает ваш Happ или другой VPN
+                  btnVpn.setOnClickListener {
+                      val vpnApp = allApps.firstOrNull { app ->
+                          vpnKeywords.any { kw ->
+                              app.label.lowercase().contains(kw) || app.packageName.lowercase().contains(kw)
                           }
                       }
-                      if (!launched) {
+                      if (vpnApp != null) {
+                          launchPackage(vpnApp.packageName)
+                      } else {
                           try {
                               startActivity(Intent("android.net.vpn.SETTINGS"))
                           } catch (e: Exception) {
@@ -558,39 +835,52 @@ jobs:
                       }
                   }
 
-                  cardAi.setOnClickListener {
-                      var launched = false
-                      for (pkg in aiKnownPackages) {
-                          val intent = packageManager.getLaunchIntentForPackage(pkg)
-                          if (intent != null) {
-                              startActivity(intent)
-                              launched = true
-                              break
+                  // Кнопка AirPlay — мгновенно открывает AirScreen
+                  btnAirPlay.setOnClickListener {
+                      val airApp = allApps.firstOrNull { app ->
+                          airPlayKeywords.any { kw ->
+                              app.label.lowercase().contains(kw) || app.packageName.lowercase().contains(kw)
                           }
                       }
-                      if (!launched) {
-                          val voiceIntent = Intent(Intent.ACTION_VOICE_COMMAND)
-                          if (voiceIntent.resolveActivity(packageManager) != null) {
-                              startActivity(voiceIntent)
-                          } else {
-                              Toast.makeText(this, "Ассистент не найден", Toast.LENGTH_SHORT).show()
-                          }
+                      if (airApp != null) {
+                          launchPackage(airApp.packageName)
+                      } else {
+                          Toast.makeText(this, "Установите или откройте AirScreen", Toast.LENGTH_SHORT).show()
                       }
                   }
 
-                  cardSettings.setOnClickListener {
+                  btnHidden.setOnClickListener {
+                      showRestoreHiddenDialog()
+                  }
+
+                  btnSettings.setOnClickListener {
                       startActivity(Intent(Settings.ACTION_SETTINGS))
                   }
               }
 
-              private fun loadInstalledApps() {
-                  val rv = findViewById<RecyclerView>(R.id.appsGrid)
-                  rv.layoutManager = GridLayoutManager(this, 5)
+              private fun openTvInputSource() {
+                  val tvIntents = listOf(
+                      Intent("com.android.tv.action.VIEW_INPUTS"),
+                      Intent("android.intent.action.TV_INPUT"),
+                      Intent(Settings.ACTION_SETTINGS)
+                  )
+                  for (intent in tvIntents) {
+                      if (intent.resolveActivity(packageManager) != null) {
+                          startActivity(intent)
+                          return
+                      }
+                  }
+              }
+
+              private fun refreshLauncherGrid() {
+                  val prefs = getSharedPreferences("tvos_v3_prefs", Context.MODE_PRIVATE)
+                  val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
+                  val dockSet = prefs.getStringSet("dock_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
                   val pm = packageManager
-                  val apps = mutableListOf<AppEntry>()
-                  val registeredPackages = HashSet<String>()
-                  registeredPackages.add(packageName)
+                  allApps = mutableListOf()
+                  val seen = HashSet<String>()
+                  seen.add(packageName)
 
                   val leanbackIntent = Intent(Intent.ACTION_MAIN, null).apply {
                       addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
@@ -603,37 +893,244 @@ jobs:
 
                   for (info in activities) {
                       val pkg = info.activityInfo.packageName
-                      if (!registeredPackages.contains(pkg)) {
-                          registeredPackages.add(pkg)
-                          apps.add(
+                      if (!seen.contains(pkg)) {
+                          seen.add(pkg)
+                          val label = info.loadLabel(pm).toString()
+
+                          // Автоскрытие мусорных ACBridge и MHshare при первом запуске
+                          if (!prefs.getBoolean("cleaned_$pkg", false)) {
+                              if (defaultHiddenKeywords.any { label.lowercase().contains(it) }) {
+                                  hiddenSet.add(pkg)
+                                  prefs.edit().putStringSet("hidden_pkgs", hiddenSet).apply()
+                              }
+                              prefs.edit().putBoolean("cleaned_$pkg", true).apply()
+                          }
+
+                          val icon = info.loadIcon(pm)
+                          val banner = info.activityInfo.loadBanner(pm) ?: info.activityInfo.applicationInfo.loadBanner(pm)
+                          val isSys = (info.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                          val dominantColor = extractDominantColor(icon)
+                          val (studioBitmap, brandColor) = StudioCardGenerator.createCardBitmap(label, pkg, icon, dominantColor)
+
+                          allApps.add(
                               AppEntry(
-                                  label = info.loadLabel(pm).toString(),
+                                  label = label,
                                   packageName = pkg,
-                                  icon = info.loadIcon(pm)
+                                  icon = icon,
+                                  banner = banner,
+                                  brandColor = brandColor,
+                                  studioCardBitmap = studioBitmap,
+                                  isSystem = isSys
                               )
                           )
                       }
                   }
 
-                  apps.sortBy { it.label.lowercase() }
+                  // Сначала ваши установленные программы, системные — в конце
+                  allApps.sortWith(compareBy<AppEntry> { it.isSystem }.thenBy { it.label.lowercase() })
 
-                  rv.adapter = AppAdapter(this, apps) { targetPackage ->
-                      val launchIntent = pm.getLaunchIntentForPackage(targetPackage)
-                      if (launchIntent != null) {
-                          startActivity(launchIntent)
+                  val visibleApps = allApps.filter { !hiddenSet.contains(it.packageName) }
+
+                  // В верхнем стеклянном Доке — 6 главных карточек (как в ролике)
+                  val dockApps = mutableListOf<AppEntry>()
+                  for (app in visibleApps) {
+                      if (dockSet.contains(app.packageName) && dockApps.size < 6) {
+                          dockApps.add(app)
                       }
+                  }
+                  for (app in visibleApps) {
+                      if (!dockApps.contains(app) && dockApps.size < 6) {
+                          dockApps.add(app)
+                      }
+                  }
+
+                  val gridApps = visibleApps.filter { !dockApps.contains(it) }
+
+                  val dockRv = findViewById<RecyclerView>(R.id.dockRecycler)
+                  val gridRv = findViewById<RecyclerView>(R.id.appsGrid)
+
+                  dockRv.layoutManager = GridLayoutManager(this, 6)
+                  gridRv.layoutManager = GridLayoutManager(this, 6)
+
+                  dockRv.adapter = AppAdapter(
+                      this,
+                      dockApps,
+                      onFocused = { updateFocusedAppStage(it, true) },
+                      onLaunch = { launchPackage(it.packageName) },
+                      onLongClick = { showAppOptionsDialog(it) }
+                  )
+
+                  gridRv.adapter = AppAdapter(
+                      this,
+                      gridApps,
+                      onFocused = { updateFocusedAppStage(it, false) },
+                      onLaunch = { launchPackage(it.packageName) },
+                      onLongClick = { showAppOptionsDialog(it) }
+                  )
+
+                  if (dockApps.isNotEmpty()) {
+                      updateFocusedAppStage(dockApps.first(), true)
+                  }
+              }
+
+              private fun updateFocusedAppStage(app: AppEntry, isInDock: Boolean) {
+                  val titleView = findViewById<TextView>(R.id.tvFocusedAppTitle)
+                  val hintView = findViewById<TextView>(R.id.tvFocusedAppHint)
+                  val ambientView = findViewById<View>(R.id.ambientGlowView)
+
+                  titleView.text = app.label
+                  val zone = if (isInDock) "Apple TV Dock" else "Все приложения"
+                  hintView.text = "$zone  •  ОК — открыть  •  Удерживайте ОК — настроить"
+
+                  // Плавный переход атмосферного свечения фона в цвет приложения
+                  val targetColor = Color.argb(
+                      135,
+                      Color.red(app.brandColor),
+                      Color.green(app.brandColor),
+                      Color.blue(app.brandColor)
+                  )
+
+                  val animator = ValueAnimator.ofObject(ArgbEvaluator(), currentAmbientColor, targetColor)
+                  animator.duration = 280
+                  animator.addUpdateListener { va ->
+                      val animatedColor = va.animatedValue as Int
+                      val bg = GradientDrawable(
+                          GradientDrawable.Orientation.TL_BR,
+                          intArrayOf(
+                              animatedColor,
+                              Color.parseColor("#0D101A"),
+                              Color.parseColor("#06070B")
+                          )
+                      )
+                      ambientView.background = bg
+                  }
+                  animator.start()
+                  currentAmbientColor = targetColor
+              }
+
+              private fun showAppOptionsDialog(app: AppEntry) {
+                  val prefs = getSharedPreferences("tvos_v3_prefs", Context.MODE_PRIVATE)
+                  val dockSet = prefs.getStringSet("dock_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
+                  val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
+
+                  val isInDock = dockSet.contains(app.packageName)
+                  val dockOption = if (isInDock) "Убрать из верхнего Дока" else "Закрепить в верхнем Доке (топ-6)"
+
+                  val options = arrayOf(
+                      "Запустить ${app.label}",
+                      dockOption,
+                      "Скрыть карточку с экрана",
+                      "Системные свойства приложения"
+                  )
+
+                  AlertDialog.Builder(this)
+                      .setTitle(app.label)
+                      .setItems(options) { _, which ->
+                          when (which) {
+                              0 -> launchPackage(app.packageName)
+                              1 -> {
+                                  if (isInDock) dockSet.remove(app.packageName) else dockSet.add(app.packageName)
+                                  prefs.edit().putStringSet("dock_pkgs", dockSet).apply()
+                                  refreshLauncherGrid()
+                              }
+                              2 -> {
+                                  hiddenSet.add(app.packageName)
+                                  prefs.edit().putStringSet("hidden_pkgs", hiddenSet).apply()
+                                  refreshLauncherGrid()
+                                  Toast.makeText(this, "${app.label} скрыто", Toast.LENGTH_SHORT).show()
+                              }
+                              3 -> {
+                                  val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                      data = android.net.Uri.parse("package:${app.packageName}")
+                                  }
+                                  startActivity(intent)
+                              }
+                          }
+                      }
+                      .show()
+              }
+
+              private fun showRestoreHiddenDialog() {
+                  val prefs = getSharedPreferences("tvos_v3_prefs", Context.MODE_PRIVATE)
+                  val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
+
+                  if (hiddenSet.isEmpty()) {
+                      Toast.makeText(this, "Скрытых приложений нет", Toast.LENGTH_SHORT).show()
+                      return
+                  }
+
+                  val hiddenApps = allApps.filter { hiddenSet.contains(it.packageName) }
+                  val names = hiddenApps.map { it.label }.toTypedArray()
+
+                  AlertDialog.Builder(this)
+                      .setTitle("Скрытые приложения (нажмите, чтобы вернуть):")
+                      .setItems(names) { _, which ->
+                          val target = hiddenApps[which]
+                          hiddenSet.remove(target.packageName)
+                          prefs.edit().putStringSet("hidden_pkgs", hiddenSet).apply()
+                          refreshLauncherGrid()
+                      }
+                      .setNeutralButton("Вернуть все") { _, _ ->
+                          prefs.edit().putStringSet("hidden_pkgs", emptySet()).apply()
+                          refreshLauncherGrid()
+                      }
+                      .show()
+              }
+
+              private fun launchPackage(pkg: String) {
+                  val intent = packageManager.getLaunchIntentForPackage(pkg)
+                  if (intent != null) {
+                      startActivity(intent)
+                  }
+              }
+
+              private fun extractDominantColor(drawable: Drawable): Int {
+                  return try {
+                      val bmp = Bitmap.createBitmap(40, 40, Bitmap.Config.ARGB_8888)
+                      val canvas = Canvas(bmp)
+                      drawable.setBounds(0, 0, 40, 40)
+                      drawable.draw(canvas)
+
+                      var rSum = 0L
+                      var gSum = 0L
+                      var bSum = 0L
+                      var count = 0
+
+                      for (x in 4 until 36 step 4) {
+                          for (y in 4 until 36 step 4) {
+                              val pixel = bmp.getPixel(x, y)
+                              if (Color.alpha(pixel) > 180) {
+                                  val r = Color.red(pixel)
+                                  val g = Color.green(pixel)
+                                  val b = Color.blue(pixel)
+                                  if ((r + g + b) in 45..700) {
+                                      rSum += r
+                                      gSum += g
+                                      bSum += b
+                                      count++
+                                  }
+                              }
+                          }
+                      }
+                      bmp.recycle()
+
+                      if (count > 0) {
+                          Color.rgb((rSum / count).toInt(), (gSum / count).toInt(), (bSum / count).toInt())
+                      } else {
+                          Color.parseColor("#2B3548")
+                      }
+                  } catch (e: Exception) {
+                      Color.parseColor("#2B3548")
                   }
               }
           }
           EOF
 
-      # 4. Сборка проекта
       - name: Compile Debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
-      # 5. Загрузка готового APK в артефакты
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppleTV-Launcher-Debug
+          name: AppleTV-Vibe-Launcher-v3
           path: app/build/outputs/apk/debug/app-debug.apk
