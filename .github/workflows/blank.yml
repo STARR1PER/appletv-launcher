@@ -19,14 +19,18 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      # 1. Создаем пустой маркер проекта и инициализируем Gradle 8.2
+      # 1. Принятие лицензий SDK
+      - name: Accept Android SDK Licenses
+        run: yes | sdkmanager --licenses || true
+
+      # 2. Инициализация чистого Gradle Wrapper 8.2
       - name: Initialize Gradle 8.2 Wrapper
         run: |
           touch settings.gradle
           gradle wrapper --gradle-version 8.2
           chmod +x gradlew
 
-      # 2. Создаем структуру и все файлы приложения
+      # 3. Генерация структуры и исходного кода
       - name: Generate tvOS Launcher Source Code
         run: |
           mkdir -p app/src/main/java/com/appletv/launcher
@@ -54,6 +58,12 @@ jobs:
           include ':app'
           EOF
 
+          # gradle.properties
+          cat << 'EOF' > gradle.properties
+          android.useAndroidX=true
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          EOF
+
           # Root build.gradle
           cat << 'EOF' > build.gradle
           plugins {
@@ -62,7 +72,7 @@ jobs:
           }
           EOF
 
-          # app/build.gradle
+          # app/build.gradle (только необходимые стабильные зависимости)
           cat << 'EOF' > app/build.gradle
           plugins {
               id 'com.android.application'
@@ -99,10 +109,8 @@ jobs:
           dependencies {
               implementation 'androidx.core:core-ktx:1.12.0'
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.11.0'
               implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
               implementation 'androidx.recyclerview:recyclerview:1.3.2'
-              implementation 'androidx.cardview:cardview:1.0.0'
           }
           EOF
 
@@ -146,10 +154,8 @@ jobs:
               <color name="tvos_bg_dark">#0F1015</color>
               <color name="tvos_card_normal">#1E222D</color>
               <color name="tvos_card_stroke">#303646</color>
-              <color name="tvos_focus_stroke">#FFFFFF</color>
               <color name="tvos_text_primary">#F5F6F8</color>
               <color name="tvos_text_secondary">#8E92A0</color>
-              <color name="tvos_accent_blue">#0A84FF</color>
           </resources>
           EOF
 
@@ -157,7 +163,7 @@ jobs:
           cat << 'EOF' > app/src/main/res/values/themes.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <style name="Theme.AppleTv" parent="Theme.MaterialComponents.NoActionBar">
+              <style name="Theme.AppleTv" parent="Theme.AppCompat.NoActionBar">
                   <item name="android:windowBackground">@color/tvos_bg_dark</item>
                   <item name="android:windowNoTitle">true</item>
                   <item name="android:windowFullscreen">true</item>
@@ -385,29 +391,21 @@ jobs:
               android:orientation="vertical"
               android:padding="8dp">
 
-              <androidx.cardview.widget.CardView
+              <FrameLayout
                   android:id="@+id/appCardView"
                   android:layout_width="140dp"
                   android:layout_height="140dp"
+                  android:background="@drawable/app_tile_background"
                   android:clickable="true"
-                  android:focusable="true"
-                  android:foreground="?attr/selectableItemBackground">
+                  android:focusable="true">
 
-                  <LinearLayout
-                      android:id="@+id/appInnerLayout"
-                      android:layout_width="match_parent"
-                      android:layout_height="match_parent"
-                      android:background="@drawable/app_tile_background"
-                      android:gravity="center"
-                      android:orientation="vertical">
-
-                      <ImageView
-                          android:id="@+id/appIcon"
-                          android:layout_width="60dp"
-                          android:layout_height="60dp"
-                          android:contentDescription="App Icon" />
-                  </LinearLayout>
-              </androidx.cardview.widget.CardView>
+                  <ImageView
+                      android:id="@+id/appIcon"
+                      android:layout_width="60dp"
+                      android:layout_height="60dp"
+                      android:layout_gravity="center"
+                      android:contentDescription="App Icon" />
+              </FrameLayout>
 
               <TextView
                   android:id="@+id/appLabel"
@@ -446,8 +444,8 @@ jobs:
 
               class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
                   val card: View = view.findViewById(R.id.appCardView)
-                  val icon: ImageView = view.findViewById(R.id.img_icon) ?: view.findViewById(R.id.appIcon)
-                  val title: TextView = view.findViewById(R.id.tv_label) ?: view.findViewById(R.id.appLabel)
+                  val icon: ImageView = view.findViewById(R.id.appIcon)
+                  val title: TextView = view.findViewById(R.id.appLabel)
               }
 
               override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -629,11 +627,11 @@ jobs:
           }
           EOF
 
-      # 3. Собираем проект через созданный Gradle Wrapper 8.2
+      # 4. Сборка проекта
       - name: Compile Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
-      # 4. Загружаем результат в артефакты
+      # 5. Загрузка готового APK в артефакты
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
