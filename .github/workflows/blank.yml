@@ -69,8 +69,8 @@ jobs:
                   applicationId "com.appletv.launcher"
                   minSdk 26
                   targetSdk 34
-                  versionCode 14
-                  versionName "4.2.0"
+                  versionCode 15
+                  versionName "4.3.0"
               }
               buildTypes {
                   release { minifyEnabled false }
@@ -175,8 +175,10 @@ jobs:
               android:layout_height="match_parent"
               android:background="@color/tvos_bg_dark">
 
+              <!-- Динамический фоновый слой для кинематографичных переливов -->
               <View android:id="@+id/ambientGlowView" android:layout_width="match_parent" android:layout_height="match_parent" />
 
+              <!-- Минималистичная верхняя панель (без лишних кнопок) -->
               <LinearLayout
                   android:id="@+id/topHeader"
                   android:layout_width="0dp" android:layout_height="wrap_content"
@@ -235,6 +237,7 @@ jobs:
           import android.content.Intent
           import android.graphics.*
           import android.graphics.drawable.Drawable
+          import android.graphics.drawable.GradientDrawable
           import android.os.Bundle
           import android.provider.Settings
           import android.view.KeyEvent
@@ -297,6 +300,13 @@ jobs:
                   }
                   allApps = list
 
+                  // Плавный фоновый градиент по умолчанию
+                  val ambientView = findViewById<View>(R.id.ambientGlowView)
+                  ambientView.background = GradientDrawable(
+                      GradientDrawable.Orientation.TR_BL,
+                      intArrayOf(Color.parseColor("#141C2E"), Color.parseColor("#080B14"), Color.parseColor("#020305"))
+                  )
+
                   val rv = findViewById<RecyclerView>(R.id.appsGrid)
                   rv.layoutManager = GridLayoutManager(this, 5)
                   rv.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -313,7 +323,6 @@ jobs:
           }
           EOF
 
-          # Явно привязываем Gradle версии 8.2 вместо последней сырой
           gradle wrapper --gradle-version 8.2 --distribution-type bin
           chmod +x gradlew
 
@@ -323,5 +332,5 @@ jobs:
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppleTV-Vibe-Launcher-v4.2
+          name: AppleTV-Vibe-Launcher-v4.3
           path: app/build/outputs/apk/debug/app-debug.apk
