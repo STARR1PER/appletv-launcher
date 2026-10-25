@@ -28,7 +28,7 @@ jobs:
           gradle wrapper --gradle-version 8.2
           chmod +x gradlew
 
-      - name: Generate Apple VibeTV v3.2 Source Code
+      - name: Generate Apple VibeTV v3.3 Source Code
         run: |
           mkdir -p app/src/main/java/com/appletv/launcher
           mkdir -p app/src/main/res/layout
@@ -84,8 +84,8 @@ jobs:
                   applicationId "com.appletv.launcher"
                   minSdk 26
                   targetSdk 34
-                  versionCode 5
-                  versionName "3.2.0"
+                  versionCode 6
+                  versionName "3.3.0"
               }
 
               buildTypes {
@@ -148,10 +148,10 @@ jobs:
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <color name="tvos_bg_dark">#050608</color>
+              <color name="tvos_bg_dark">#030406</color>
               <color name="tvos_text_primary">#FFFFFF</color>
               <color name="tvos_text_secondary">#9DA4B0</color>
-              <color name="tvos_dock_glass">#1CFFFFFF</color>
+              <color name="tvos_dock_glass">#1AFFFFFF</color>
               <color name="tvos_dock_stroke">#38FFFFFF</color>
               <color name="tvos_pill_bg">#22FFFFFF</color>
           </resources>
@@ -215,7 +215,7 @@ jobs:
               android:clipChildren="false"
               android:clipToPadding="false">
 
-              <!-- Живой фоновый градиент с атмосферным свечением в стиле Apple TV -->
+              <!-- Кинематографический динамический фон с глубокой текстурой tvOS -->
               <View
                   android:id="@+id/ambientGlowView"
                   android:layout_width="match_parent"
@@ -399,7 +399,7 @@ jobs:
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:layout_marginTop="2dp"
-                      android:text="Apple TV Dock  •  ОК — открыть  •  Удерживайте ОК — настроить"
+                      android:text="Apple TV Dock  •  ОК — открыть  •  Пульт: okko/иви перехвачены"
                       android:textColor="#A0FFFFFF"
                       android:textSize="12sp" />
               </LinearLayout>
@@ -702,7 +702,7 @@ jobs:
           }
           EOF
 
-          # MainActivity.kt
+          # MainActivity.kt (С перехватом кнопок пульта Okko/Иви и кинематографическим фоном)
           cat << 'EOF' > app/src/main/java/com/appletv/launcher/MainActivity.kt
           package com.appletv.launcher
 
@@ -711,7 +711,6 @@ jobs:
           import android.content.ComponentName
           import android.content.Context
           import android.content.Intent
-          import android.content.pm.ApplicationInfo
           import android.graphics.Bitmap
           import android.graphics.Canvas
           import android.graphics.Color
@@ -719,6 +718,7 @@ jobs:
           import android.graphics.drawable.GradientDrawable
           import android.os.Bundle
           import android.provider.Settings
+          import android.view.KeyEvent
           import android.view.View
           import android.view.animation.DecelerateInterpolator
           import android.widget.TextView
@@ -733,9 +733,10 @@ jobs:
 
               private val vpnKeywords = listOf("happ", "v2ray", "outline", "wireguard", "vpn", "nekobox", "singbox", "clash", "vless")
               private val airPlayKeywords = listOf("airscreen", "mhshare", "acbridge", "airplay", "airpin", "miracast", "cast", "wfd")
+              private val junkKeywords = listOf("parentcontrol", "webview", "certinstaller", "printspooler")
 
               private lateinit var allApps: MutableList<AppEntry>
-              private var currentAmbientColor: Int = Color.parseColor("#1B2438")
+              private var currentAmbientColor: Int = Color.parseColor("#141C2E")
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
@@ -751,6 +752,30 @@ jobs:
                   super.onResume()
                   updateGreetingAndDate()
                   refreshLauncherGrid()
+              }
+
+              // Перехват нажатий брендовых кнопок на пульте Сбера (Okko, Иви и др.)
+              override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+                  when (keyCode) {
+                      183, 269, 10001 -> { // Сканкоды нижних кнопок пульта (например, Okko)
+                          launchPreferredMediaApp("youtube") // Перенаправляем на YouTube / SmartTube
+                          return true
+                      }
+                      184, 270, 10002 -> { // Кнопка Иви
+                          launchPreferredMediaApp("kinopoisk") // Перенаправляем на Кинопоиск
+                          return true
+                      }
+                  }
+                  return super.onKeyDown(keyCode, event)
+              }
+
+              private fun launchPreferredMediaApp(keyword: String) {
+                  val app = allApps.firstOrNull { it.label.lowercase().contains(keyword) || it.packageName.lowercase().contains(keyword) }
+                  if (app != null) {
+                      launchAppEntry(app)
+                  } else {
+                      Toast.makeText(this, "Приложение не найдено", Toast.LENGTH_SHORT).show()
+                  }
               }
 
               private fun wakeUpAirPlayServicesSilently() {
@@ -893,7 +918,7 @@ jobs:
               }
 
               private fun refreshLauncherGrid() {
-                  val prefs = getSharedPreferences("tvos_v32_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v33_prefs", Context.MODE_PRIVATE)
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
                   val dockSet = prefs.getStringSet("dock_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
@@ -913,6 +938,16 @@ jobs:
                       if (!seen.contains(pkg)) {
                           seen.add(pkg)
                           val label = info.loadLabel(pm).toString()
+
+                          // Автоскрытие системного мусора и WebView
+                          if (!prefs.getBoolean("cleaned_$pkg", false)) {
+                              if (junkKeywords.any { label.lowercase().contains(it) || pkg.lowercase().contains(it) }) {
+                                  hiddenSet.add(pkg)
+                                  prefs.edit().putStringSet("hidden_pkgs", hiddenSet).apply()
+                              }
+                              prefs.edit().putBoolean("cleaned_$pkg", true).apply()
+                          }
+
                           val icon = info.loadIcon(pm)
                           val banner = info.activityInfo.loadBanner(pm) ?: info.activityInfo.applicationInfo.loadBanner(pm)
                           val isSys = (info.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
@@ -937,8 +972,6 @@ jobs:
                   allApps.sortWith(compareBy<AppEntry> { it.isSystem }.thenBy { it.label.lowercase() })
 
                   val visibleApps = allApps.filter { !hiddenSet.contains(it.packageName) }
-
-                  // Адаптивное число колонок (до 6 на широкий экран)
                   val spanCount = if (visibleApps.size >= 6) 6 else if (visibleApps.size in 4..5) visibleApps.size else 4
 
                   val dockApps = mutableListOf<AppEntry>()
@@ -991,24 +1024,24 @@ jobs:
                   val zone = if (isInDock) "Apple TV Dock" else "Все приложения"
                   hintView.text = "$zone  •  ОК — открыть  •  Удерживайте ОК — настроить"
 
-                  // Живые обои tvOS: плавная смена фонового цвета под брендом выбранного приложения
+                  // Кинематографические многослойные обои с мягким рассеянным свечением
                   val targetColor = Color.argb(
-                      155,
+                      170,
                       Color.red(app.brandColor),
                       Color.green(app.brandColor),
                       Color.blue(app.brandColor)
                   )
 
                   val animator = ValueAnimator.ofObject(ArgbEvaluator(), currentAmbientColor, targetColor)
-                  animator.duration = 320
+                  animator.duration = 340
                   animator.addUpdateListener { va ->
                       val animatedColor = va.animatedValue as Int
                       val bg = GradientDrawable(
-                          GradientDrawable.Orientation.TL_BR,
+                          GradientDrawable.Orientation.TR_BL,
                           intArrayOf(
                               animatedColor,
-                              Color.parseColor("#0C101C"),
-                              Color.parseColor("#050608")
+                              Color.parseColor("#090D16"),
+                              Color.parseColor("#030406")
                           )
                       )
                       ambientView.background = bg
@@ -1018,7 +1051,7 @@ jobs:
               }
 
               private fun showAppOptionsDialog(app: AppEntry) {
-                  val prefs = getSharedPreferences("tvos_v32_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v33_prefs", Context.MODE_PRIVATE)
                   val dockSet = prefs.getStringSet("dock_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
@@ -1053,7 +1086,7 @@ jobs:
               }
 
               private fun showRestoreHiddenDialog() {
-                  val prefs = getSharedPreferences("tvos_v32_prefs", Context.MODE_PRIVATE)
+                  val prefs = getSharedPreferences("tvos_v33_prefs", Context.MODE_PRIVATE)
                   val hiddenSet = prefs.getStringSet("hidden_pkgs", emptySet())?.toMutableSet() ?: mutableSetOf()
 
                   if (hiddenSet.isEmpty()) {
@@ -1126,5 +1159,5 @@ jobs:
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppleTV-Vibe-Launcher-v3.2
+          name: AppleTV-Vibe-Launcher-v3.3
           path: app/build/outputs/apk/debug/app-debug.apk
