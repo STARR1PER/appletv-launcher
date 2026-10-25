@@ -19,7 +19,12 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Create Project Files & Gradle Wrapper
+      - name: Setup Gradle 8.2
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.2'
+
+      - name: Create Project Files
         run: |
           mkdir -p app/src/main/java/com/appletv/launcher
           mkdir -p app/src/main/res/layout
@@ -28,11 +33,18 @@ jobs:
 
           cat << 'EOF' > settings.gradle
           pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
           }
           dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories { google(); mavenCentral() }
+              repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
           }
           rootProject.name = "AppleTvLauncher"
           include ':app'
@@ -45,13 +57,15 @@ jobs:
 
           cat << 'EOF' > build.gradle
           buildscript {
-              repositories { google(); mavenCentral() }
+              repositories {
+                  google()
+                  mavenCentral()
+              }
               dependencies {
                   classpath 'com.android.tools.build:gradle:8.1.0'
                   classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22'
               }
           }
-          allprojects { repositories { google(); mavenCentral() } }
           EOF
 
           cat << 'EOF' > app/build.gradle
@@ -110,7 +124,7 @@ jobs:
                       android:launchMode="singleTask"
                       android:clearTaskOnLaunch="true"
                       android:stateNotNeeded="true"
-                      android: excludeFromRecents="true"
+                      android:excludeFromRecents="true"
                       android:screenOrientation="landscape">
                       <intent-filter android:priority="999">
                           <action android:name="android.intent.action.MAIN" />
@@ -123,9 +137,6 @@ jobs:
               </application>
           </manifest>
           EOF
-
-          # Fix manifest attribute typo if any space exists
-          sed -i 's/android: excludeFromRecents/android:excludeFromRecents/g' app/src/main/AndroidManifest.xml
 
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
@@ -212,21 +223,17 @@ jobs:
               android:clipToPadding="false"
               android:background="@color/tvos_bg_dark">
 
-              <!-- 3. Живые 4K видео-обои Apple Aerial -->
               <VideoView
                   android:id="@+id/aerialVideoView"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent"
                   android:visibility="gone" />
 
-              <!-- Градиентный фон / затемнение поверх видео для читаемости -->
               <View
                   android:id="@+id/ambientGlowView"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent" />
 
-              <!-- Верхний Top Shelf (Часы + Погода слева, ИИ + Статус-бар Apple справа) -->
-              <!-- Глазок и кнопка AirPlay убраны по пункту 2 из тетради -->
               <LinearLayout
                   android:id="@+id/topHeader"
                   android:layout_width="0dp"
@@ -269,7 +276,6 @@ jobs:
                               android:textSize="42sp"
                               android:fontFamily="sans-serif-light" />
 
-                          <!-- 4. Виджет погоды в Top Shelf -->
                           <TextView
                               android:id="@+id/tvWeather"
                               android:layout_width="wrap_content"
@@ -288,14 +294,12 @@ jobs:
                       android:layout_height="1dp"
                       android:layout_weight="1" />
 
-                  <!-- Правый блок: Siri/Gemini, Источники, Настройки и Статус-бар Apple -->
                   <LinearLayout
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:gravity="center_vertical"
                       android:orientation="horizontal">
 
-                      <!-- Замена Салюта на Siri / Gemini (Пункт 4 из тетради + Пункт 6 WebView) -->
                       <TextView
                           android:id="@+id/btnAiAssistant"
                           android:layout_width="wrap_content"
@@ -341,7 +345,6 @@ jobs:
                           android:textColor="#FFFFFF"
                           android:textSize="17sp" />
 
-                      <!-- 7. Полноценный статус-бар Apple (Wi-Fi/Ethernet + активный VPN) -->
                       <LinearLayout
                           android:id="@+id/appleStatusBar"
                           android:layout_width="wrap_content"
@@ -380,7 +383,6 @@ jobs:
                   </LinearLayout>
               </LinearLayout>
 
-              <!-- Центральная зона: название выбранного приложения и подсказка по перемещению -->
               <LinearLayout
                   android:id="@+id/focusedTitleBlock"
                   android:layout_width="wrap_content"
@@ -413,7 +415,6 @@ jobs:
                       android:textSize="11sp" />
               </LinearLayout>
 
-              <!-- Пункт 7 из тетради: Увеличено расстояние между верхом и первыми рядами (150dp свободного места посередине!) -->
               <LinearLayout
                   android:id="@+id/dockGlassBar"
                   android:layout_width="0dp"
@@ -439,7 +440,6 @@ jobs:
                       android:clipToPadding="false" />
               </LinearLayout>
 
-              <!-- Основная сетка приложений -->
               <androidx.recyclerview.widget.RecyclerView
                   android:id="@+id/appsGrid"
                   android:layout_width="0dp"
@@ -573,7 +573,6 @@ jobs:
               private var registrationListener: NsdManager.RegistrationListener? = null
               private val mainHandler = Handler(Looper.getMainLooper())
 
-              // Знаменитые потоки Apple Aerial 4K/HD
               private val aerialUrls = listOf(
                   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
                   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
@@ -624,14 +623,10 @@ jobs:
                   }
               }
 
-              // =========================================================================
-              // 1. ФИЛЬТРАЦИЯ ПРИЛОЖЕНИЙ + КАРТОЧКИ С ИКОНКАМИ + СОРТИРОВКА
-              // =========================================================================
               private fun isJunkSystemApp(pkg: String, label: String, appInfo: ApplicationInfo): Boolean {
                   val p = pkg.lowercase()
                   val l = label.lowercase()
 
-                  // Всегда разрешаем популярные медиа, браузеры, плееры и VPN
                   val whitelist = listOf(
                       "youtube", "kinopoisk", "wink", "ivi", "okko", "kion", "premier", "start",
                       "vlc", "kodi", "plex", "num", "lampa", "torrserve", "smarttube", "rutube",
@@ -641,16 +636,14 @@ jobs:
                   )
                   if (whitelist.any { p.contains(it) || l.contains(it) }) return false
 
-                  // Отсекаем системный мусор Сбера и сервисные пакеты Android
                   val blacklist = listOf(
                       "parentcontrol", "webview", "inputmethod", "keyboard", "bluetooth",
-                      "packageinstaller", "certinstaller", " CaptivePortal", "dreams", "screensaver",
+                      "packageinstaller", "certinstaller", "captiveportal", "dreams", "screensaver",
                       "printspooler", "statementservice", "companion", "callout", "salute", "sber",
-                      "starlauncher", "katniss", " LeanbackLauncher", "tvrecommendations", "provision"
+                      "starlauncher", "katniss", "leanbacklauncher", "tvrecommendations", "provision"
                   )
-                  if (blacklist.any { p.contains(it.trim().lowercase()) || l.contains(it.trim().lowercase()) }) return true
+                  if (blacklist.any { p.contains(it) || l.contains(it) }) return true
 
-                  // Если это чисто системный компонент без флага обновленного пользовательского приложения
                   val isSystem = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
                   val isUpdatedSystem = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
                   if (isSystem && !isUpdatedSystem) {
@@ -665,7 +658,6 @@ jobs:
                   val pm = packageManager
                   val rawMap = mutableMapOf<String, ResolveInfo>()
 
-                  // Собираем и обычные, и TV-приложения
                   val mainIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
                   val tvIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
 
@@ -686,7 +678,6 @@ jobs:
                       filtered.add(AppEntry(label, pkg, icon, banner, bmp))
                   }
 
-                  // Применяем сохраненный пользователем порядок иконок (Пункт 1 из тетради)
                   val savedOrder = (prefs.getString("saved_app_order", "") ?: "")
                       .split(",").filter { it.isNotBlank() }
 
@@ -725,7 +716,6 @@ jobs:
                       return bmp
                   }
 
-                  // Генерируем фирменный градиент карточки на основе названия пакета
                   val hash = pkg.hashCode()
                   val c1 = Color.HSVToColor(floatArrayOf(((hash and 0xFF) % 360).toFloat(), 0.55f, 0.32f))
                   val c2 = Color.HSVToColor(floatArrayOf((((hash shr 8) and 0xFF) % 360).toFloat(), 0.70f, 0.16f))
@@ -734,14 +724,12 @@ jobs:
                   paint.shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), c1, c2, Shader.TileMode.CLAMP)
                   canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 
-                  // Рисуем иконку приложения по центру
                   val iconSize = 78
                   val left = (width - iconSize) / 2
                   val top = (height - iconSize) / 2 - 14
                   icon.setBounds(left, top, left + iconSize, top + iconSize)
                   icon.draw(canvas)
 
-                  // Рисуем читаемое название внизу карточки
                   val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                       color = Color.WHITE
                       textSize = 21f
@@ -755,9 +743,6 @@ jobs:
                   return bmp
               }
 
-              // =========================================================================
-              // 2. 3D-ПАРАЛЛАКС ТЕНЕЙ (ELEVATION) И ПЕРЕМЕЩЕНИЕ ПРИЛОЖЕНИЙ
-              // =========================================================================
               private fun setupAdapters() {
                   val dockRv = findViewById<RecyclerView>(R.id.dockRecycler)
                   dockRv.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
@@ -790,14 +775,12 @@ jobs:
                           val border = holder.itemView.findViewById<View>(R.id.focusBorder)
                           val badge = holder.itemView.findViewById<TextView>(R.id.tvCardBadge)
 
-                          // Скругление углов для картинки и 3D-тени
                           cardView.outlineProvider = ViewOutlineProvider.BACKGROUND
                           cardView.clipToOutline = true
                           artwork.setImageBitmap(app.cardBitmap)
 
                           badge.visibility = if (movingPackage == app.packageName) View.VISIBLE else View.GONE
 
-                          // 2. Параллакс-эффект тени (3D Elevation + Overshoot Scale)
                           cardView.setOnFocusChangeListener { v, hasFocus ->
                               if (hasFocus) {
                                   findViewById<TextView>(R.id.tvFocusedAppTitle).text = app.label
@@ -822,7 +805,6 @@ jobs:
                               }
                           }
 
-                          // Короткое нажатие OK: либо фиксируем позицию, либо открываем приложение
                           cardView.setOnClickListener {
                               if (movingPackage != null) {
                                   movingPackage = null
@@ -834,7 +816,6 @@ jobs:
                               }
                           }
 
-                          // Долгое нажатие OK: включаем режим перемещения приложения (Пункт 1 из тетради)
                           cardView.setOnLongClickListener {
                               movingPackage = if (movingPackage == app.packageName) null else app.packageName
                               badge.visibility = if (movingPackage == app.packageName) View.VISIBLE else View.GONE
@@ -844,7 +825,6 @@ jobs:
                               true
                           }
 
-                          // Обработка перемещения иконки влево/вправо
                           cardView.setOnKeyListener { _, keyCode, event ->
                               if (movingPackage == app.packageName && event.action == KeyEvent.ACTION_DOWN) {
                                   val currentPos = holder.bindingAdapterPosition
@@ -875,16 +855,12 @@ jobs:
                   }
               }
 
-              // =========================================================================
-              // 3. ЖИВЫЕ 4K-ОБОИ APPLE AERIAL (VIDEOVIEW) И СМЕНА ОБОЕВ
-              // =========================================================================
               private fun applyWallpaperTheme() {
                   val mode = prefs.getInt("wallpaper_mode", 0)
                   val videoView = findViewById<VideoView>(R.id.aerialVideoView)
                   val ambientView = findViewById<View>(R.id.ambientGlowView)
 
                   if (mode == 0 || mode == 1) {
-                      // Режим живых видео-обоев Apple Aerial
                       videoView.visibility = View.VISIBLE
                       val url = aerialUrls[mode % aerialUrls.size]
                       try {
@@ -899,7 +875,6 @@ jobs:
                               setStaticGradient(ambientView, 2)
                               true
                           }
-                          // Полупрозрачная виньетка поверх видео для идеальной читаемости текста
                           ambientView.background = GradientDrawable(
                               GradientDrawable.Orientation.TOP_BOTTOM,
                               intArrayOf(Color.parseColor("#8804060C"), Color.parseColor("#4404060C"), Color.parseColor("#CC020305"))
@@ -917,16 +892,13 @@ jobs:
 
               private fun setStaticGradient(view: View, mode: Int) {
                   val colors = when (mode) {
-                      2 -> intArrayOf(Color.parseColor("#182B49"), Color.parseColor("#090E1A"), Color.parseColor("#020305")) // Cupertino Midnight
-                      3 -> intArrayOf(Color.parseColor("#0F382F"), Color.parseColor("#061715"), Color.parseColor("#020404")) // Aurora Borealis
-                      else -> intArrayOf(Color.parseColor("#3B1C32"), Color.parseColor("#180B1A"), Color.parseColor("#040205")) // California Sunset
+                      2 -> intArrayOf(Color.parseColor("#182B49"), Color.parseColor("#090E1A"), Color.parseColor("#020305"))
+                      3 -> intArrayOf(Color.parseColor("#0F382F"), Color.parseColor("#061715"), Color.parseColor("#020404"))
+                      else -> intArrayOf(Color.parseColor("#3B1C32"), Color.parseColor("#180B1A"), Color.parseColor("#040205"))
                   }
                   view.background = GradientDrawable(GradientDrawable.Orientation.TR_BL, colors)
               }
 
-              // =========================================================================
-              // 4 & 7. ВИДЖЕТ ПОГОДЫ В TOP SHELF + СТАТУС-БАР APPLE (WI-FI / ETHERNET / VPN)
-              // =========================================================================
               private fun startStatusAndWeatherUpdates() {
                   updateNetworkAndVpnStatus()
                   fetchLiveWeather()
@@ -958,7 +930,6 @@ jobs:
                       if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) isVpn = true
                   }
 
-                  // Дополнительная проверка всех интерфейсов на активный VPN (tun0 / wg0)
                   for (net in cm.allNetworks) {
                       val c = cm.getNetworkCapabilities(net)
                       if (c != null && c.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
@@ -973,7 +944,6 @@ jobs:
               private fun fetchLiveWeather() {
                   thread {
                       try {
-                          // Определяем координаты и погоду через открытое API без ключей
                           val url = URL("https://api.open-meteo.com/v1/forecast?latitude=55.75&longitude=37.61&current_weather=true")
                           val conn = url.openConnection() as HttpURLConnection
                           conn.connectTimeout = 5000
@@ -1002,9 +972,6 @@ jobs:
                   }
               }
 
-              // =========================================================================
-              // 6. КАСТОМНЫЙ ИИ-БРАУЗЕР (WEBVIEW) ДЛЯ SIRI / GEMINI / CHATGPT
-              // =========================================================================
               private fun openBuiltInAiWebView() {
                   val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
                   val container = LinearLayout(this).apply {
@@ -1064,9 +1031,6 @@ jobs:
                   dialog.show()
               }
 
-              // =========================================================================
-              // СИСТЕМНЫЙ AIRPLAY NSD БЕЗ СТОРОННЕГО СОФТА (Пункт 3 из тетради)
-              // =========================================================================
               private fun registerBuiltInAirPlayService() {
                   try {
                       nsdManager = getSystemService(Context.NSD_SERVICE) as NsdManager
@@ -1085,11 +1049,7 @@ jobs:
                   } catch (_: Exception) {}
               }
 
-              // =========================================================================
-              // 5 ИЗ ТЕТРАДИ: ПЕРЕНАЗНАЧЕНИЕ КНОПКИ «СМОТРИМ» И ДРУГИХ КНОПОК ПУЛЬТА
-              // =========================================================================
               override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-                  // Если включен режим захвата любой кнопки пульта в настройках
                   if ( prefs.getBoolean("capture_next_key", false) &&
                        keyCode !in listOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_BACK) ) {
                       prefs.edit()
@@ -1102,13 +1062,11 @@ jobs:
 
                   val savedSmotrimCode = prefs.getInt("custom_smotrim_keycode", -1)
 
-                  // Перехват кнопки «Смотрим» (и брендированных кнопок пульта Сбера)
                   if (keyCode == savedSmotrimCode || keyCode in listOf(183, 184, 185, 186, 269, 270, 271, 10001, 10002)) {
                       executeMappedRemoteAction()
                       return true
                   }
 
-                  // Замена голосового вызова «Салют» на встроенный Siri / Gemini / ChatGPT
                   if (keyCode == KeyEvent.KEYCODE_SEARCH || keyCode == KeyEvent.KEYCODE_VOICE_ASSIST) {
                       openBuiltInAiWebView()
                       return true
@@ -1164,9 +1122,6 @@ jobs:
                   }
               }
 
-              // =========================================================================
-              // МЕНЮ НАСТРОЕК APPLE TV (ОБОИ, КНОПКА «СМОТРИМ», ИИ, СИСТЕМА)
-              // =========================================================================
               private fun showAppleTvSettingsDialog() {
                   val items = arrayOf(
                       "🎬 Обои: Живые 4K видео Apple Aerial (Режим 1)",
@@ -1252,11 +1207,8 @@ jobs:
           }
           EOF
 
-          gradle wrapper --gradle-version 8.2 --distribution-type bin
-          chmod +x gradlew
-
       - name: Compile Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: gradle assembleDebug --no-daemon
 
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
