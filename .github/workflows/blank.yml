@@ -19,8 +19,11 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Validate Gradle Wrapper
-        uses: gradle/actions/setup-gradle@v3
+      - name: Initialize Gradle Wrapper
+        run: |
+          touch settings.gradle
+          gradle wrapper --gradle-version 8.2
+          chmod +x gradlew
 
       - name: Compile Debug APK
         run: ./gradlew assembleDebug --no-daemon
@@ -28,5 +31,5 @@ jobs:
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: AppleTV-Vibe-Launcher-v3.8
+          name: AppleTV-Vibe-Launcher-v3.9
           path: app/build/outputs/apk/debug/app-debug.apk
